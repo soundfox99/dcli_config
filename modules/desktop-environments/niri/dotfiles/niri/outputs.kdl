@@ -1,0 +1,11 @@
+// Niri output configuration.
+// Default placeholder — edit per host to add output {} blocks with mode,
+// scale, position, and transform. Run `niri msg outputs` to list connectors.
+//
+// Example:
+// output "DP-1" {
+//     mode "2560x1440@165"
+//     scale 1.0
+//     position x=0 y=0
+//     variable-refresh-rate
+// }

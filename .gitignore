@@ -1,0 +1,12 @@
+# System packages merged from host (auto-generated, host-specific)
+system-packages-*.yaml
+config.yaml
+
+# Reference material — large upstream copies, not part of this repo
+examples/
+
+# git-crypt symmetric keys — never commit
+*.key
+
+# Runtime state — dcli regenerates these per machine
+state/
