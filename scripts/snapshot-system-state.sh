@@ -89,9 +89,9 @@ PY
 
 echo "[snapshot] Capturing bookmarks..."
 chromium_bookmarks_to_html "${HOME}/.config/chromium/Default/Bookmarks" \
-    "${REPO_ROOT}/browser-bookmarks/chromium.html"
+    "${REPO_ROOT}/modules/browsers/data/chromium-bookmarks.html"
 chromium_bookmarks_to_html "${HOME}/.config/BraveSoftware/Brave-Browser/Default/Bookmarks" \
-    "${REPO_ROOT}/browser-bookmarks/brave.html"
+    "${REPO_ROOT}/modules/browsers/data/brave-bookmarks.html"
 # Firefox: requires reading places.sqlite, skipped — export manually via
 # Bookmarks → Manage → Export to HTML when you actually use Firefox.
 

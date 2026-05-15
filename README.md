@@ -45,14 +45,14 @@ modules/
   system-packages-<host>/     Auto-synced system packages (don't hand-edit)
   <category>/<name>/module.lua + dotfiles/    Feature modules
   scripts/                    Cross-module hook scripts (multilib, fstrim, ...)
-browser-bookmarks/            git-crypt encrypted
+modules/browsers/data/*-bookmarks.html            git-crypt encrypted
 scripts/setup-repo-encryption.sh   One-time git-crypt init
 state/                        Runtime state, auto-managed by dcli
 ```
 
 ## Encrypted files (git-crypt)
 
-`browser-bookmarks/**` is encrypted via the `.gitattributes` filter. The symmetric key file (`~/arch-dcli-config.key`) is the only way to decrypt on another machine — **back it up to a password manager AND a USB**. Without it the bookmarks in the repo are unrecoverable.
+`modules/browsers/data/*-bookmarks.html**` is encrypted via the `.gitattributes` filter. The symmetric key file (`~/arch-dcli-config.key`) is the only way to decrypt on another machine — **back it up to a password manager AND a USB**. Without it the bookmarks in the repo are unrecoverable.
 
 ### Setting up encryption on a brand-new repo
 
@@ -69,7 +69,7 @@ git remote add origin git@github.com:soundfox99/dcli_config.git
 git push -u origin main
 
 # Sanity check after commit:
-git show HEAD:browser-bookmarks/firefox.html | head -c 9 | xxd
+git show HEAD:modules/browsers/data/*-bookmarks.htmlfirefox.html | head -c 9 | xxd
 # Expected output starts with: 0047 4954 4352 5950 54  (GITCRYPT magic)
 ```
 

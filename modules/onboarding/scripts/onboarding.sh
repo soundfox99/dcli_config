@@ -123,18 +123,27 @@ fi
 # Reliable cross-browser auto-import is nontrivial (each browser uses its own
 # proprietary store). We just point users at the html files; they import via
 # the browser's own UI on first launch.
-bookmark_marker="${HOME}/.local/state/arch-config/onboarding-bookmarks-shown"
-if [ ! -f "${bookmark_marker}" ] && [ -d "${REPO_ROOT}/browser-bookmarks" ] \
-    && [ -s "${REPO_ROOT}/browser-bookmarks/firefox.html" ]; then
-    # Skip if files are still ciphertext (git-crypt locked)
-    if ! head -c 9 "${REPO_ROOT}/browser-bookmarks/firefox.html" | grep -q GITCRYPT; then
-        echo
-        echo "[onboarding] Your bookmarks are decrypted at:"
-        echo "  ${REPO_ROOT}/browser-bookmarks/{firefox,chromium,brave}.html"
-        echo "  Import via each browser: Bookmarks → Manage → Import HTML."
-        mkdir -p "$(dirname "${bookmark_marker}")"
-        touch "${bookmark_marker}"
-    fi
+bookmark_dir="${REPO_ROOT}/modules/browsers/data"
+import_script="${REPO_ROOT}/modules/browsers/scripts/import-browser-bookmarks.sh"
+
+# 6a. Chromium / Brave: auto-import (safe mode — only when profile is empty)
+if [ -x "${import_script}" ]; then
+    echo
+    echo "[onboarding] Importing Chromium/Brave bookmarks (auto mode)..."
+    "${import_script}" || true
+fi
+
+# 6b. Firefox: still a manual step (no clean auto-import from HTML)
+firefox_marker="${HOME}/.local/state/arch-config/onboarding-firefox-bookmarks-shown"
+if [ ! -f "${firefox_marker}" ] \
+    && [ -s "${bookmark_dir}/firefox-bookmarks.html" ] \
+    && ! head -c 9 "${bookmark_dir}/firefox-bookmarks.html" | grep -q GITCRYPT; then
+    echo
+    echo "[onboarding] Firefox bookmarks: import manually via"
+    echo "  Bookmarks → Manage Bookmarks → Import HTML from"
+    echo "  ${bookmark_dir}/firefox-bookmarks.html"
+    mkdir -p "$(dirname "${firefox_marker}")"
+    touch "${firefox_marker}"
 fi
 
 # ─── 7. Timeshift first-run check ───────────────────────────────────────────

@@ -1,2 +1,2 @@
-browser-bookmarks/** filter=git-crypt diff=git-crypt
+modules/browsers/data/*-bookmarks.html filter=git-crypt diff=git-crypt
 .gitattributes !filter !diff

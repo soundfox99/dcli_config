@@ -35,7 +35,7 @@ fi
 
 # 4. Belt + suspenders: spot-check the staged blob of one bookmark file by
 #    piping through xxd (bash can't compare strings containing null bytes).
-sample=$(git ls-files browser-bookmarks/ 2>/dev/null | head -n1)
+sample=$(git ls-files 'modules/browsers/data/*-bookmarks.html' 2>/dev/null | head -n1)
 if [ -n "${sample}" ]; then
     magic=$(git show ":${sample}" 2>/dev/null | head -c 9 | xxd -p)
     if [ "${magic}" != "004749544352595054" ]; then
