@@ -1,5 +1,5 @@
 # VSCodium extensions captured from `codium --list-extensions`.
-# Last snapshot: 2026-05-15T20:14:58+00:00
+# Last snapshot: 2026-05-15T20:19:29+00:00
 # This file is overwritten on every dcli-push — edit the running
 # VSCodium (install/uninstall), or add an ID below and run
 # 'dcli sync' to install it before the next push.
