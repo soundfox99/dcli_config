@@ -4,6 +4,17 @@
 
 set -euo pipefail
 
+# De-escalate if running as root in a sudo context — rustup writes to ~/.rustup
+# and ~/.cargo, so it must be the desktop user's home, not root's.
+if [ "${EUID}" -eq 0 ]; then
+    if [ -n "${SUDO_USER:-}" ] && [ "${SUDO_USER}" != "root" ]; then
+        exec sudo -u "${SUDO_USER}" --preserve-env=HOME,PATH -- "$0" "$@"
+    else
+        echo "rustup-default.sh refuses to run as root and SUDO_USER is unset." >&2
+        exit 1
+    fi
+fi
+
 if ! command -v rustup >/dev/null; then
     echo "rustup not installed yet — skipping." >&2
     exit 0

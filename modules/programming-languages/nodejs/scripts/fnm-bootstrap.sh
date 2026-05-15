@@ -5,6 +5,16 @@
 
 set -euo pipefail
 
+# De-escalate if root in a sudo context — fnm writes to ~/.local/share/fnm.
+if [ "${EUID}" -eq 0 ]; then
+    if [ -n "${SUDO_USER:-}" ] && [ "${SUDO_USER}" != "root" ]; then
+        exec sudo -u "${SUDO_USER}" --preserve-env=HOME,PATH -- "$0" "$@"
+    else
+        echo "fnm-bootstrap.sh refuses to run as root and SUDO_USER is unset." >&2
+        exit 1
+    fi
+fi
+
 if ! command -v fnm >/dev/null 2>&1; then
     echo "fnm not on PATH — skipping. Re-run after fnm is installed." >&2
     exit 0

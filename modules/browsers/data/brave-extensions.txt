@@ -1,4 +1,4 @@
-# Captured from /home/hestia/.config/BraveSoftware/Brave-Browser/Default/Extensions at 2026-05-15T20:01:35+00:00
+# Captured from /home/hestia/.config/BraveSoftware/Brave-Browser/Default/Extensions at 2026-05-15T20:07:04+00:00
 # Find names: https://chrome.google.com/webstore/detail/<ID>
 cimiefiiaegbelhefglklhhakcgmhkai
 ddkjiahejlhfcafbddmgiahcphecmpfh
