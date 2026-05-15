@@ -8,7 +8,7 @@ set -euo pipefail
 # and ~/.cargo, so it must be the desktop user's home, not root's.
 if [ "${EUID}" -eq 0 ]; then
     if [ -n "${SUDO_USER:-}" ] && [ "${SUDO_USER}" != "root" ]; then
-        exec sudo -u "${SUDO_USER}" --preserve-env=HOME,PATH -- "$0" "$@"
+        exec sudo -H -u "${SUDO_USER}" --preserve-env=PATH -- "$0" "$@"
     else
         echo "rustup-default.sh refuses to run as root and SUDO_USER is unset." >&2
         exit 1

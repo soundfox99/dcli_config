@@ -96,26 +96,23 @@ chromium_bookmarks_to_html "${HOME}/.config/BraveSoftware/Brave-Browser/Default/
 # Bookmarks → Manage → Export to HTML when you actually use Firefox.
 
 # ─── VSCodium extensions ────────────────────────────────────────────────────
+# Replace-style (matches browser snapshot): the running VSCodium is the source
+# of truth. Uninstalling in the IDE then `dcli-push` removes the ID from the
+# repo on next sync. If you want to declare an ID without installing yet, add
+# it to the file AND run `dcli sync` before the next `dcli-push`.
 if command -v codium >/dev/null 2>&1; then
     out="${REPO_ROOT}/modules/editors/vscodium/data/extensions.txt"
-    # Preserve manual entries (commented IDs + section headers) by keeping the
-    # existing file's # comment lines and replacing only the bare IDs.
     installed=$(codium --list-extensions 2>/dev/null | sort -u || true)
-    if [ -n "${installed}" ]; then
-        # Merge: union of currently installed + already-declared (non-comment
-        # lines in the existing file). Letting people add experimental ones
-        # via the file even if not yet installed.
-        existing=$(grep -vE '^\s*(#|$)' "${out}" 2>/dev/null | sort -u || true)
-        merged=$( { echo "${installed}"; echo "${existing}"; } | sort -u )
-        {
-            echo "# VSCodium extensions captured from \`codium --list-extensions\`"
-            echo "# Last snapshot: $(date -Iseconds)"
-            echo "# Edit freely — IDs here will be force-installed on next sync."
-            echo
-            echo "${merged}"
-        } > "${out}"
-        echo "  vscodium: $(echo "${merged}" | wc -l) extension(s) (union of installed + declared)"
-    fi
+    {
+        echo "# VSCodium extensions captured from \`codium --list-extensions\`."
+        echo "# Last snapshot: $(date -Iseconds)"
+        echo "# This file is overwritten on every dcli-push — edit the running"
+        echo "# VSCodium (install/uninstall), or add an ID below and run"
+        echo "# 'dcli sync' to install it before the next push."
+        echo
+        echo "${installed}"
+    } > "${out}"
+    echo "  vscodium: $(echo "${installed}" | grep -c .) extension(s)"
 fi
 
 echo "[snapshot] Done."

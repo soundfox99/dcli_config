@@ -1,36 +1,28 @@
-# VSCodium extensions — one ID per line. Sourced from open-vsx.org by default.
-# Comments and blank lines ignored.
+# VSCodium extensions captured from `codium --list-extensions`.
+# Last snapshot: 2026-05-15T20:14:58+00:00
+# This file is overwritten on every dcli-push — edit the running
+# VSCodium (install/uninstall), or add an ID below and run
+# 'dcli sync' to install it before the next push.
 
-# ─── Rust ────────────────────────────────────────────────────────────────
-rust-lang.rust-analyzer
-tamasfe.even-better-toml
-vadimcn.vscode-lldb
-serayuzgur.crates
-
-# ─── Python ──────────────────────────────────────────────────────────────
-ms-python.python
 charliermarsh.ruff
-ms-python.mypy-type-checker
-ms-python.debugpy
-
-# ─── Go ──────────────────────────────────────────────────────────────────
-golang.go
-
-# ─── Node / JavaScript / TypeScript ──────────────────────────────────────
 dbaeumer.vscode-eslint
-esbenp.prettier-vscode
-
-# ─── Ruby ────────────────────────────────────────────────────────────────
-shopify.ruby-lsp
-koichisasada.vscode-rdbg
-
-# ─── Lua (for editing this repo's modules) ───────────────────────────────
-sumneko.lua
-
-# ─── General productivity ────────────────────────────────────────────────
 eamodio.gitlens
 editorconfig.editorconfig
-streetsidesoftware.code-spell-checker
+esbenp.prettier-vscode
+golang.go
+koichisasada.vscode-rdbg
+ms-azuretools.vscode-containers
 ms-azuretools.vscode-docker
+ms-python.debugpy
+ms-python.mypy-type-checker
+ms-python.python
+ms-python.vscode-python-envs
 redhat.vscode-yaml
+rust-lang.rust-analyzer
+serayuzgur.crates
+shopify.ruby-lsp
+streetsidesoftware.code-spell-checker
+sumneko.lua
+tamasfe.even-better-toml
+vadimcn.vscode-lldb
 vscode-icons-team.vscode-icons
