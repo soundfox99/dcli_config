@@ -1,0 +1,36 @@
+# VSCodium extensions — one ID per line. Sourced from open-vsx.org by default.
+# Comments and blank lines ignored.
+
+# ─── Rust ────────────────────────────────────────────────────────────────
+rust-lang.rust-analyzer
+tamasfe.even-better-toml
+vadimcn.vscode-lldb
+serayuzgur.crates
+
+# ─── Python ──────────────────────────────────────────────────────────────
+ms-python.python
+charliermarsh.ruff
+ms-python.mypy-type-checker
+ms-python.debugpy
+
+# ─── Go ──────────────────────────────────────────────────────────────────
+golang.go
+
+# ─── Node / JavaScript / TypeScript ──────────────────────────────────────
+dbaeumer.vscode-eslint
+esbenp.prettier-vscode
+
+# ─── Ruby ────────────────────────────────────────────────────────────────
+shopify.ruby-lsp
+koichisasada.vscode-rdbg
+
+# ─── Lua (for editing this repo's modules) ───────────────────────────────
+sumneko.lua
+
+# ─── General productivity ────────────────────────────────────────────────
+eamodio.gitlens
+editorconfig.editorconfig
+streetsidesoftware.code-spell-checker
+ms-azuretools.vscode-docker
+redhat.vscode-yaml
+vscode-icons-team.vscode-icons

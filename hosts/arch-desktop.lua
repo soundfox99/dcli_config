@@ -41,6 +41,7 @@ return {
         "socials/module",
         "media/module",
         "torrents/module",
+        "flatpak/module",
 
         -- VMs and containers
         "containers/module",
@@ -51,6 +52,9 @@ return {
         "desktop-environments/kde-plasma",
         -- "desktop-environments/niri",
         -- "desktop-environments/hyprland",
+
+        -- Interactive first-run setup (SSH key, git-crypt unlock, docker group)
+        "onboarding/module",
 
         -- Ad-hoc dcli installs land here
         "declared-packages",
