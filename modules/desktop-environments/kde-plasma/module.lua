@@ -1,9 +1,6 @@
 return {
     description = "KDE Plasma 6 desktop environment",
-    conflicts = {
-        "desktop-environments/niri",
-        "desktop-environments/hyprland",
-    },
+    -- DEs coexist: SDDM picks the session at login. No conflicts declared.
     packages = {
         "plasma-meta",
         "plasma-workspace",

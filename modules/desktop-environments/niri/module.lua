@@ -1,9 +1,6 @@
 return {
     description = "Niri scrollable-tiling Wayland compositor with defaults",
-    conflicts = {
-        "desktop-environments/hyprland",
-        "desktop-environments/kde-plasma",
-    },
+    -- DEs coexist: SDDM picks the session at login. No conflicts declared.
     dotfiles_sync = true,
     packages = {
         "niri",
@@ -16,7 +13,9 @@ return {
         "fuzzel",
         "sway-audio-idle-inhibit-git",
         "swayidle",
-        "quickshell-git",
+        -- noctalia-shell-git depends on its own Quickshell fork (noctalia-qs),
+        -- which provides the `quickshell` binary. Don't also declare quickshell-git
+        -- here — they conflict at package-install time.
         "noctalia-shell-git",
     },
 }

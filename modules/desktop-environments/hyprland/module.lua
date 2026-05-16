@@ -1,9 +1,6 @@
 return {
     description = "Hyprland dynamic tiling Wayland compositor with waybar + wofi",
-    conflicts = {
-        "desktop-environments/niri",
-        "desktop-environments/kde-plasma",
-    },
+    -- DEs coexist: SDDM picks the session at login. No conflicts declared.
     dotfiles_sync = true,
     packages = {
         "hyprland",

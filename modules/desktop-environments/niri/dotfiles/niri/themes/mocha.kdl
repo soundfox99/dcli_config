@@ -1,0 +1,31 @@
+// Catppuccin Mocha palette for niri layout primitives.
+// Sourced via `include "./current-theme.kdl"` in config.kdl AFTER the shell
+// theme (noctalia / dms), so these values win.
+
+layout {
+    focus-ring {
+        active-color   "#cba6f7"
+        inactive-color "#45475a"
+        urgent-color   "#f5c2e7"
+    }
+
+    border {
+        active-color   "#cba6f7"
+        inactive-color "#45475a"
+        urgent-color   "#f5c2e7"
+    }
+
+    shadow {
+        color "#00000070"
+    }
+
+    tab-indicator {
+        active-color   "#cba6f7"
+        inactive-color "#45475a"
+        urgent-color   "#f5c2e7"
+    }
+
+    insert-hint {
+        color "#cba6f780"
+    }
+}

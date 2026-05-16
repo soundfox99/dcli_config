@@ -48,10 +48,13 @@ return {
         "virtualization/module",
         "vpns/module",
 
-        -- Desktop environment (only one active at a time)
+        -- Desktop environments — all install side-by-side. SDDM lets you
+        -- pick the session at login; whatever you used last is remembered
+        -- per user. KDE Plasma is the current daily-driver. Comment any
+        -- you don't want packages/dotfiles deployed for.
         "desktop-environments/kde-plasma",
-        -- "desktop-environments/niri",
-        -- "desktop-environments/hyprland",
+        "desktop-environments/niri",
+        "desktop-environments/hyprland",
 
         -- Interactive first-run setup (SSH key, git-crypt unlock, docker group)
         "onboarding/module",
@@ -91,6 +94,7 @@ return {
             "cups",
             "docker",
             "containerd",
+            "libvirtd",
             "sddm",
             "sshd",
             "fstrim.timer",

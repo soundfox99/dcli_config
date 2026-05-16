@@ -20,6 +20,22 @@ if ! command -v rustup >/dev/null; then
     exit 0
 fi
 
+# Arch's pacman rustup doesn't ship ~/.cargo/env (only rustup-init.sh does).
+# Write the standard template so .bashrc / .zshrc and other tools that
+# `source $HOME/.cargo/env` work uniformly.
+if [ ! -f "${HOME}/.cargo/env" ]; then
+    mkdir -p "${HOME}/.cargo"
+    cat > "${HOME}/.cargo/env" <<'EOF'
+#!/bin/sh
+# rustup shell setup; modify path for the cargo binaries
+case ":${PATH}:" in
+    *:"$HOME/.cargo/bin":*) ;;
+    *) export PATH="$HOME/.cargo/bin:$PATH" ;;
+esac
+EOF
+    chmod 644 "${HOME}/.cargo/env"
+fi
+
 if rustup default 2>/dev/null | grep -q '^stable'; then
     echo "rustup default toolchain already set."
 else

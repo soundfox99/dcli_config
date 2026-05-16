@@ -79,15 +79,18 @@ if [ -d "${REPO_ROOT}/.git" ] \
     fi
 fi
 
-# ─── 3. Docker group membership ─────────────────────────────────────────────
-if getent group docker >/dev/null 2>&1 && ! id -nG "${USER}" | tr ' ' '\n' | grep -qx docker; then
-    echo
-    echo "[onboarding] Your user is not in the 'docker' group; sudo is required for docker."
-    if prompt_yes "Add ${USER} to the docker group (needs sudo)?"; then
-        sudo usermod -aG docker "${USER}"
-        echo "  Added. Log out and back in (or 'newgrp docker') for the change to take effect."
+# ─── 3. Group memberships (docker, libvirt) ─────────────────────────────────
+for group in docker libvirt; do
+    if getent group "${group}" >/dev/null 2>&1 \
+        && ! id -nG "${USER}" | tr ' ' '\n' | grep -qx "${group}"; then
+        echo
+        echo "[onboarding] Your user is not in the '${group}' group."
+        if prompt_yes "Add ${USER} to the ${group} group (needs sudo)?"; then
+            sudo usermod -aG "${group}" "${USER}"
+            echo "  Added. Log out and back in (or 'newgrp ${group}') for the change to take effect."
+        fi
     fi
-fi
+done
 
 # ─── 4. Default login shell ─────────────────────────────────────────────────
 if [ "$(getent passwd "${USER}" | cut -d: -f7)" != "/bin/bash" ] && [ -x /bin/bash ]; then
@@ -100,12 +103,15 @@ if [ "$(getent passwd "${USER}" | cut -d: -f7)" != "/bin/bash" ] && [ -x /bin/ba
     fi
 fi
 
-# ─── 5. GTK theme + cursor ──────────────────────────────────────────────────
-# Apply Catppuccin Mocha + Bibata if the packages are installed (theming module).
-# Idempotent: gsettings is a no-op when the value already matches.
+# ─── 5. Theme switcher — apply the active palette (kitty + starship + GTK) ──
+# scripts/switch-theme.sh handles the per-app routing; the active theme is
+# recorded in modules/theming/active-theme.txt. Cursor + icon themes are still
+# set here since they're not part of the switchable palette.
+if [ -x "${REPO_ROOT}/scripts/switch-theme.sh" ]; then
+    "${REPO_ROOT}/scripts/switch-theme.sh" || true
+fi
 if command -v gsettings >/dev/null 2>&1; then
     declare -A theme_targets=(
-        ["gtk-theme"]="Catppuccin-Mocha-Standard-Mauve-Dark"
         ["cursor-theme"]="Bibata-Modern-Ice"
         ["icon-theme"]="Adwaita"
     )

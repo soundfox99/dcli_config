@@ -26,7 +26,7 @@ $time\
 [ ](fg:purple)\
 $line_break$character"""
 
-palette = 'catppuccin_mocha'
+palette = 'tokyo_night'
 
 [palettes.gruvbox_dark]
 color_fg0 = '#fbf1c7'
@@ -67,6 +67,36 @@ surface0 = "#313244"
 base = "#1e1e2e"
 mantle = "#181825"
 crust = "#11111b"
+
+# Tokyo Night Storm — keys mirror catppuccin_mocha so the same format string
+# works under either palette. Switch via scripts/switch-theme.sh.
+[palettes.tokyo_night]
+rosewater = "#73daca"
+flamingo  = "#bb9af7"
+pink      = "#ff9e64"
+orange    = "#ff9e64"
+red       = "#f7768e"
+maroon    = "#db4b4b"
+peach     = "#ff9e64"
+yellow    = "#e0af68"
+green     = "#9ece6a"
+teal      = "#1abc9c"
+sky       = "#7dcfff"
+sapphire  = "#7aa2f7"
+blue      = "#7aa2f7"
+lavender  = "#bb9af7"
+text      = "#c0caf5"
+subtext1  = "#a9b1d6"
+subtext0  = "#9aa5ce"
+overlay2  = "#737aa2"
+overlay1  = "#565f89"
+overlay0  = "#414868"
+surface2  = "#3b4261"
+surface1  = "#292e42"
+surface0  = "#1f2335"
+base      = "#24283b"
+mantle    = "#1a1b26"
+crust     = "#16161e"
 
 [os]
 disabled = false
