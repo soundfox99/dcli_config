@@ -48,6 +48,9 @@ return {
         "virtualization/module",
         "vpns/module",
 
+        -- LLMs
+        "llms/module",
+
         -- Desktop environments — all install side-by-side. SDDM lets you
         -- pick the session at login; whatever you used last is remembered
         -- per user. KDE Plasma is the current daily-driver. Comment any
