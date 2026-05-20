@@ -151,6 +151,8 @@ binds {
     // ...
     Mod+Ctrl+Alt+Down   { move-window-to-workspace-down; }
     Mod+Ctrl+Alt+UP     { move-window-to-workspace-up; }
+    Mod+Ctrl+Alt+J      { move-window-to-workspace-down; }
+    Mod+Ctrl+Alt+K      { move-window-to-workspace-up; }
     Mod+Shift+Page_Down { move-workspace-down; }
     Mod+Shift+Page_Up   { move-workspace-up; }
     Mod+Shift+U         { move-workspace-down; }
