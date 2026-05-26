@@ -42,6 +42,7 @@ return {
         "media/module",
         "torrents/module",
         "flatpak/module",
+        "games/module",
 
         -- VMs and containers
         "containers/module",
