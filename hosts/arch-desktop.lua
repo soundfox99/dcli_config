@@ -52,6 +52,9 @@ return {
         -- LLMs
         "llms/module",
 
+        -- ComfyUI (Stable Diffusion image gen — installs in ~/ComfyUI/.venv)
+        "comfyui/module",
+
         -- Desktop environments — all install side-by-side. SDDM lets you
         -- pick the session at login; whatever you used last is remembered
         -- per user. KDE Plasma is the current daily-driver. Comment any
@@ -102,6 +105,7 @@ return {
             "sddm",
             "sshd",
             "fstrim.timer",
+            "comfyui",
         },
         disabled = {},
     },
