@@ -10,9 +10,7 @@ return {
     enabled_modules = {
         -- Conditional / system-wide
         "hardware",
-        -- TODO: create modules/system-packages-arch-laptop/ mirroring the
-        -- desktop one, then enable it here. Left off for now.
-        -- "system-packages-arch-laptop",
+        "system-packages-arch-laptop",
 
         -- Theming, fonts, notifications
         "fonts/module",
@@ -99,6 +97,8 @@ return {
             "sddm",
             "sshd",
             "fstrim.timer",
+            "tlp",
+            "acpid",
         },
         disabled = {},
     },
