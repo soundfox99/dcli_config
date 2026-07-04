@@ -3,5 +3,6 @@ return {
     packages = {
         "vlc",
         "mpv",
+        "mcomix",
     },
 }
