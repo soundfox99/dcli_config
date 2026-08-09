@@ -10,7 +10,8 @@ return {
         "wl-clip-persist",
         "cliphist",
         "brightnessctl",
-        "fuzzel",
+        "playerctl",     -- media keys shell out to this
+        -- fuzzel dropped: noctalia provides the launcher.
         "sway-audio-idle-inhibit-git",
         "swayidle",
         -- noctalia-shell-git depends on its own Quickshell fork (noctalia-qs),

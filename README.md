@@ -50,6 +50,27 @@ scripts/setup-repo-encryption.sh   One-time git-crypt init
 state/                        Runtime state, auto-managed by dcli
 ```
 
+## Keybindings
+
+Per-module references, since the chords have to be picked to not collide across
+three layers — the compositor grabs first, then the terminal, then the app:
+
+| Where | Reference |
+| --- | --- |
+| niri (compositor) | `modules/desktop-environments/niri/README.md`, or press `Mod+Shift+/` |
+| Zen Browser | `modules/browsers/zen/README.md` |
+| tmux | prefix is **`Ctrl+S`**, not the default `Ctrl+B` — see below |
+
+**tmux prefix is `Ctrl+S`.** Deliberate: the default `Ctrl+B` collides with
+nvim's page-up and readline's backward-char, both used constantly. The cost is
+that LazyVim's `<C-s>` **Save File** never reaches nvim inside tmux, since tmux
+eats the prefix first — use `:w`. Switching back to `Ctrl+B` would trade that
+for losing `<C-b>` page-up, which is worse. `Ctrl+Space` isn't a way out either;
+LazyVim uses it for treesitter incremental selection.
+
+Zen's shortcuts sit on `Ctrl+Alt+*` because niri owns `Mod` outright and grabs
+those chords before any application sees them.
+
 ## Encrypted files (git-crypt)
 
 `modules/browsers/data/*-bookmarks.html**` is encrypted via the `.gitattributes` filter. The symmetric key file (`~/arch-dcli-config.key`) is the only way to decrypt on another machine — **back it up to a password manager AND a USB**. Without it the bookmarks in the repo are unrecoverable.

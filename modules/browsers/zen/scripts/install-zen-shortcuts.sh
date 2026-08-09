@@ -5,7 +5,10 @@
 # re-running reapplies the same result, and dropping an id from the data file
 # leaves whatever Zen ships as the default for it.
 #
-# Runs as the user (Zen profiles live under ~/.config/zen and are user-owned).
+# Must run as the desktop user (Zen profiles live under ~/.config/zen and are
+# user-owned). If dcli's run_hooks_as_user couldn't de-escalate (sudo context),
+# re-exec ourselves as ${SUDO_USER}. This has to happen before ZEN_ROOT is
+# expanded, or $HOME would still be root's.
 #
 # Zen rewrites zen-keyboard-shortcuts.json from memory on change and on exit,
 # so editing it while the browser is running loses the change. This script
@@ -14,8 +17,14 @@
 set -euo pipefail
 
 if [ "${EUID}" -eq 0 ]; then
-    echo "install-zen-shortcuts.sh must run as the user, not root" >&2
-    exit 1
+    if [ -n "${SUDO_USER:-}" ] && [ "${SUDO_USER}" != "root" ]; then
+        # -H resets HOME to the target user's home; --preserve-env=PATH keeps the parent PATH
+        exec sudo -H -u "${SUDO_USER}" --preserve-env=PATH -- "$0" "$@"
+    else
+        echo "install-zen-shortcuts.sh refuses to run as root and SUDO_USER is unset." >&2
+        echo "Re-run dcli sync from a non-root shell." >&2
+        exit 1
+    fi
 fi
 
 MODULE_ROOT="$(cd "$(dirname "$0")/.." && pwd)"

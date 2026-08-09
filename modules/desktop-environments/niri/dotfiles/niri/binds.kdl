@@ -13,14 +13,7 @@ binds {
     // shows a list of important hotkeys.
     Mod+Shift+Slash { show-hotkey-overlay; }
 
-    // Shell Commands
-    //
-    // Noctalia Shell
-// // //     Mod+Space hotkey-overlay-title="Open Noctalia Launcher" { spawn "qs" "-c" "noctalia-shell" "ipc" "call" "launcher" "toggle"; } // Commented by shell-switcher // Commented by shell-switcher // Commented by shell-switcher
-// // //     Mod+Shift+X hotkey-overlay-title="Lock Screen" { spawn "qs" "-c" "noctalia-shell" "ipc" "call" "lockscreen" "lock"; } // Commented by shell-switcher // Commented by shell-switcher // Commented by shell-switcher
-    // Dank Material Shell
-// // //     // Mod+Space hotkey-overlay-title="Open DMS Launcher" { spawn "dms" "ipc" "call" "spotlight" "toggle"; } // Commented by shell-switcher // Commented by shell-switcher // Commented by shell-switcher
-// // //     // Mod+Ctrl+Space hotkey-overlay-title="Open DMS Overview" { spawn "dms" "ipc" "call" "dash" "open" "overview"; } // Commented by shell-switcher // Commented by shell-switcher // Commented by shell-switcher
+    // Noctalia's launcher and emoji binds live in shell-switcher-binds.kdl.
 
     // DCLI Commands
 
@@ -30,8 +23,8 @@ binds {
 
     Mod+T hotkey-overlay-title="Open a Terminal: kitty" { spawn "kitty"; }
     Mod+Return hotkey-overlay-title="Open a Terminal: kitty" { spawn "kitty"; }
-    Mod+D hotkey-overlay-title="Open Discord" { spawn "vesktop"; }
-    Mod+F hotkey-overlay-title="Open Discord" { spawn "nemo"; }
+    Mod+D hotkey-overlay-title="Open Discord" { spawn "discord"; }
+    Mod+F hotkey-overlay-title="Open Files: nautilus" { spawn "nautilus"; }
     Mod+Y hotkey-overlay-title="Open Yazi" { spawn "kitty" "yazi"; }
     Mod+Alt+F hotkey-overlay-title="Open Felix" { spawn "kitty" "felix"; }
     Mod+Shift+A hotkey-overlay-title="Open btop" { spawn "kitty" "btop"; }
@@ -39,13 +32,15 @@ binds {
     Mod+G hotkey-overlay-title="Open Telegram" { spawn "Telegram"; }
     Mod+B hotkey-overlay-title="Open Zen Browser" { spawn "zen-browser"; }
     Mod+Shift+B hotkey-overlay-title="Open Qutebrowser" { spawn "qutebrowser"; }
-    Mod+Shift+Z hotkey-overlay-title="Open Zed Editor" { spawn "sh" "-c" "$HOME/.config/niri/scripts/zed-resize-fix.sh"; }
+    // Was Zed (not installed); scripts/zed-resize-fix.sh kept for if it returns.
+    Mod+Shift+Z hotkey-overlay-title="Open VSCodium" { spawn "codium"; }
     Mod+S hotkey-overlay-title="Open Steam" { spawn "steam"; }
     Mod+Ctrl+C hotkey-overlay-title="Open OpenCode" { spawn "kitty" "opencode"; }
     Mod+Ctrl+P hotkey-overlay-title="Open Perplexity" { spawn "perplexity"; }
     Mod+Ctrl+Return { spawn "kitty" "--class=floating-kitty"; }
     Mod+Shift+O hotkey-overlay-title="Open OBS Studio" { spawn "flatpak" "run" "com.obsproject.Studio"; }
-    Super+Alt+L hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock"; }
+    // Same locker swayidle uses for the idle lock (startup.kdl).
+    Super+Alt+L hotkey-overlay-title="Lock the Screen" { spawn "qs" "-c" "noctalia-shell" "ipc" "call" "lockscreen" "lock"; }
 
     // Use spawn-sh to run a shell command. Do this if you need pipes, multiple commands, etc.
     // Note: the entire command goes as a single argument. It's passed verbatim to `sh -c`.
@@ -241,6 +236,7 @@ binds {
     Mod+Ctrl+R { reset-window-height; }
     Mod+Ctrl+F { maximize-column; }
     Mod+Shift+F { fullscreen-window; }
+    Mod+M { maximize-window-to-edges; }
 
     // Expand the focused column to space not taken up by other fully visible columns.
     // Makes the column "fill the rest of the space".
@@ -307,5 +303,5 @@ binds {
 
 
     // === SHELL SWITCHER KEYBINDINGS ===
-    Ctrl+Shift+S hotkey-overlay-title="Switch Desktop Shell" { spawn "shell-switch"; }
+    // Ctrl+Shift+S intentionally unbound: left to Zen's full-page screenshot.
 }

@@ -4,6 +4,7 @@ return {
         "bat",
         "fzf",
         "eza",
+        "yazi",          -- TUI file manager; niri binds Mod+Y to `kitty yazi`
         "plocate",
         "tree",
         "lazydocker",

@@ -1,49 +1,75 @@
 #!/usr/bin/env bash
-# Shallow-clone (or update) the wallpaper collection into ~/Pictures/Wallpapers.
+# Fetch the wallpaper collection into ~/Pictures/Wallpapers from GitHub's
+# tarball endpoint.
 #
-# Idempotent, and safe to run over a directory that already holds the images
-# but is not yet a git repo: in that case the remote is adopted in place rather
-# than the directory being wiped and re-cloned.
+# Not a git clone: the repo's pack is >1.6 GB and a --depth 1 fetch died on a
+# mid-transfer disconnect, which git cannot resume. A tarball is a single
+# resumable stream (curl -C -) with no .git objects to keep around.
 #
-# Kept shallow on purpose. The upstream history is large and worthless here --
-# we only ever want the current snapshot of the images.
-#
-# Runs as the user (writes under $HOME).
+# Must run as the desktop user. If dcli's run_hooks_as_user couldn't
+# de-escalate (sudo context), re-exec ourselves as ${SUDO_USER}, before $HOME
+# is read.
 
 set -euo pipefail
 
-REPO_URL="https://github.com/dharmx/walls"
+if [ "${EUID}" -eq 0 ]; then
+    if [ -n "${SUDO_USER:-}" ] && [ "${SUDO_USER}" != "root" ]; then
+        exec sudo -H -u "${SUDO_USER}" --preserve-env=PATH -- "$0" "$@"
+    else
+        echo "install-wallpapers.sh refuses to run as root and SUDO_USER is unset." >&2
+        echo "Re-run dcli sync from a non-root shell." >&2
+        exit 1
+    fi
+fi
+
+REPO="dharmx/walls"
 BRANCH="main"
 TARGET="${HOME}/Pictures/Wallpapers"
+STAMP="${TARGET}/.walls-version"
+WORK="${HOME}/Pictures/.walls-download"
 
-if [ "${EUID}" -eq 0 ]; then
-    echo "install-wallpapers.sh must run as the user, not root" >&2
-    exit 1
+# Upstream HEAD, resolved without fetching any objects.
+remote_sha="$(git ls-remote "https://github.com/${REPO}" "refs/heads/${BRANCH}" | cut -f1)"
+if [ -z "${remote_sha}" ]; then
+    echo "could not resolve ${REPO}@${BRANCH} — network down? skipping" >&2
+    exit 0
 fi
 
-if [ -d "${TARGET}/.git" ]; then
-    # Already a repo: fast-forward to the current upstream snapshot. Staying
-    # shallow means the fetch stays cheap on every sync.
-    echo "updating ${TARGET}"
-    git -C "${TARGET}" fetch --depth 1 origin "${BRANCH}"
-    git -C "${TARGET}" checkout -f -B "${BRANCH}" "origin/${BRANCH}"
+have_sha=""
+[ -f "${STAMP}" ] && have_sha="$(cat "${STAMP}")"
 
-elif [ -d "${TARGET}" ] && [ -n "$(ls -A "${TARGET}" 2>/dev/null)" ]; then
-    # Images are present but unmanaged. git clone refuses a non-empty target,
-    # so init and adopt the remote instead of deleting anything. checkout -f
-    # aligns files that differ; anything local-only is left in place.
-    echo "adopting existing ${TARGET} (non-empty, no .git)"
-    git -C "${TARGET}" init -b "${BRANCH}" -q
-    git -C "${TARGET}" remote add origin "${REPO_URL}"
-    git -C "${TARGET}" fetch --depth 1 origin "${BRANCH}"
-    git -C "${TARGET}" checkout -f -B "${BRANCH}" "origin/${BRANCH}"
-
-else
-    echo "cloning ${REPO_URL} to ${TARGET}"
-    mkdir -p "$(dirname "${TARGET}")"
-    git clone --depth 1 --single-branch --branch "${BRANCH}" \
-        "${REPO_URL}" "${TARGET}"
+if [ "${have_sha}" = "${remote_sha}" ] && [ "${WALLS_FORCE:-0}" != "1" ]; then
+    echo "wallpapers already at ${remote_sha:0:8} — nothing to do"
+    exit 0
 fi
 
-count="$(find "${TARGET}" -type f -not -path "${TARGET}/.git/*" | wc -l)"
-echo "${count} files in ${TARGET}"
+# Images present but unstamped: assume they are this collection and adopt them
+# rather than pulling 3.3 GB to land the same bytes. WALLS_FORCE=1 overrides.
+if [ -z "${have_sha}" ] && [ -d "${TARGET}" ] && \
+   [ -n "$(ls -A "${TARGET}" 2>/dev/null)" ] && [ "${WALLS_FORCE:-0}" != "1" ]; then
+    count="$(find "${TARGET}" -type f -not -name '.walls-version' | wc -l)"
+    echo "${TARGET} already holds ${count} files — adopting as ${remote_sha:0:8}"
+    echo "  (WALLS_FORCE=1 to download and overwrite from upstream)"
+    printf '%s\n' "${remote_sha}" > "${STAMP}"
+    exit 0
+fi
+
+echo "fetching ${REPO}@${remote_sha:0:8} (~3.3 GB)"
+mkdir -p "${WORK}" "${TARGET}"
+tarball="${WORK}/${remote_sha}.tar.gz"
+
+# --retry covers transient drops; -C - resumes a partial file across runs, which
+# is the whole reason this isn't a git fetch.
+curl -fL --retry 5 --retry-delay 3 --retry-all-errors -C - \
+    -o "${tarball}" \
+    "https://codeload.github.com/${REPO}/tar.gz/${remote_sha}"
+
+# --strip-components=1 drops the walls-<sha>/ wrapper directory. Existing files
+# are overwritten, local-only files are left alone.
+tar -xzf "${tarball}" --strip-components=1 -C "${TARGET}"
+
+printf '%s\n' "${remote_sha}" > "${STAMP}"
+rm -rf "${WORK}"
+
+count="$(find "${TARGET}" -type f -not -name '.walls-version' | wc -l)"
+echo "${count} files in ${TARGET} at ${remote_sha:0:8}"
