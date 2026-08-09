@@ -28,6 +28,7 @@ return {
         "editors/neovim",
         "editors/vscodium",
         "editors/office",
+        "editors/obsidian",
         "git-config",
 
         -- Programming languages
