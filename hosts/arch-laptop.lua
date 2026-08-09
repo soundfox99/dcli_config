@@ -1,7 +1,9 @@
--- Host configuration for arch-laptop (Personal Laptop)
--- Subset of arch-desktop: excludes games and comfyui; niri is the only DE.
--- The matching hostname will be set later; rename the file if needed so it
--- matches the machine's actual hostname (dcli auto-picks hosts/<hostname>.lua).
+-- Host configuration for arch-laptop (Dell Latitude 5410, Intel CPU + iGPU)
+-- Subset of arch-desktop: excludes games and comfyui. KDE Plasma is the
+-- current session; niri is installed alongside it and selectable from SDDM.
+--
+-- No wifi-rtl8821ce here: this machine has Intel CNVi wireless (8086:02f0),
+-- not the Realtek RTL8821CE that module tunes.
 
 return {
     host = "arch-laptop",
@@ -37,8 +39,9 @@ return {
         "programming-languages/nodejs",
         "programming-languages/ruby",
 
-        -- Apps
-        "browsers/module",
+        -- Apps — Zen is the only browser on the laptop, so browsers/module
+        -- (firefox + chromium + brave) is deliberately not enabled here.
+        "browsers/zen",
         "socials/module",
         "media/module",
         "torrents/module",
@@ -52,7 +55,9 @@ return {
         -- LLMs
         "llms/module",
 
-        -- Desktop environment — niri only on the laptop.
+        -- Desktop environments — both install side-by-side; SDDM picks the
+        -- session at login. KDE Plasma is the current daily-driver here.
+        "desktop-environments/kde-plasma",
         "desktop-environments/niri",
 
         -- Interactive first-run setup (SSH key, git-crypt unlock, docker group)
@@ -105,18 +110,20 @@ return {
 
     theming = {
         cursor = {
-            theme = "bibata-modern-ice",
+            -- Must match the directory name bibata-cursor-theme installs
+            -- under /usr/share/icons — dcli compares case-sensitively.
+            theme = "Bibata-Modern-Ice",
             size = 24,
         },
         default_apps = {
             scope = "user",
-            browser = "firefox.desktop",
+            browser = "zen.desktop",
             text_editor = "vscodium",
             file_manager = "dolphin",
             video_player = "mpv",
             audio_player = "mpv",
             image_viewer = "dolphin",
-            pdf_viewer = "firefox.desktop",
+            pdf_viewer = "zen.desktop",
             meme_types = {},
         },
     },

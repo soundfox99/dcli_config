@@ -113,7 +113,9 @@ return {
 
     theming = {
         cursor = {
-            theme = "bibata-modern-ice",
+            -- Must match the directory name bibata-cursor-theme installs
+            -- under /usr/share/icons — dcli compares case-sensitively.
+            theme = "Bibata-Modern-Ice",
             size = 24,
         },
         default_apps = {

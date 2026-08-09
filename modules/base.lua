@@ -17,6 +17,9 @@ return {
         "htop",
         "man-db",
         "man-pages",
+        -- Every host enables the NetworkManager service, so declare the
+        -- package that provides it. iwd/dhcpcd stay as fallback backends.
+        "networkmanager",
         "iwd",
         "dhcpcd",
         "neofetch",
