@@ -24,8 +24,11 @@ return {
         "dhcpcd",
         "neofetch",
 
-        -- Netfilter userspace (nftables backend)
-        "iptables-nft",
+        -- Netfilter userspace (nftables backend). The package is named
+        -- "iptables"; "iptables-nft" is only a provides/replaces alias, and
+        -- dcli doesn't resolve provides — declaring the alias made every
+        -- sync report it as missing forever.
+        "iptables",
 
         -- dcli dependencies
         "paru",

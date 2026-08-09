@@ -3,10 +3,14 @@
 -- power tooling are emitted by modules/hardware.lua and intentionally absent
 -- here. KDE Plasma packages live in modules/desktop-environments/kde-plasma.
 --
--- Deliberately NOT declared, though installed: xf86-video-amdgpu, xf86-video-ati,
--- xf86-video-nouveau, vulkan-radeon, vulkan-nouveau (archinstall leftovers — this
--- machine is Intel-only), xorg-server/xorg-xinit, and power-profiles-daemon
--- (conflicts with the tlp that hardware.lua enables). Safe to `pacman -Rns` later.
+-- xorg-server is declared below because sddm hard-depends on it — do not
+-- remove it as an "X11 leftover". xorg-xinit (startx) is a real leftover and
+-- is not declared: sessions start from SDDM.
+--
+-- Deliberately NOT declared, and safe to `pacman -Rns`: xf86-video-amdgpu,
+-- xf86-video-ati, xf86-video-nouveau, vulkan-radeon, vulkan-nouveau
+-- (archinstall leftovers — this machine is Intel-only), xorg-xinit, and
+-- power-profiles-daemon (tlp, enabled by hardware.lua, is the power tool here).
 
 return {
     description = "Packages installed manually on the system (auto-synced by dcli)",
@@ -50,6 +54,7 @@ return {
         "wireless_tools",
         "wireplumber",
         "wpa_supplicant",
+        "xorg-server", -- hard dependency of sddm
         "xdg-utils",
         "yay",
         "yay-debug",
