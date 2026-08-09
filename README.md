@@ -50,6 +50,49 @@ scripts/setup-repo-encryption.sh   One-time git-crypt init
 state/                        Runtime state, auto-managed by dcli
 ```
 
+## Post-install hooks
+
+A module can declare `post_install_hook = "scripts/<name>.sh"`, plus:
+
+| Field | Meaning |
+| --- | --- |
+| `hook_behavior = "always"` | Runs on every `dcli sync`. Requires the script be idempotent. |
+| `hook_behavior = "once"` | Runs once, then marked done. Won't retry if it failed for the wrong reason. |
+| `run_hooks_as_user = true` | *Intent* only — see below. |
+
+**`run_hooks_as_user` does not reliably drop privileges.** `dcli sync` runs under
+sudo, and hooks can still land as root. Any hook that touches `$HOME` must
+de-escalate itself, **before** `$HOME` is read:
+
+```bash
+if [ "${EUID}" -eq 0 ]; then
+    if [ -n "${SUDO_USER:-}" ] && [ "${SUDO_USER}" != "root" ]; then
+        exec sudo -H -u "${SUDO_USER}" --preserve-env=PATH -- "$0" "$@"
+    else
+        echo "refuses to run as root and SUDO_USER is unset." >&2
+        exit 1
+    fi
+fi
+```
+
+Getting this wrong is silent: the hook succeeds, but writes into `/root`.
+
+| Hook | Runs as | What it does |
+| --- | --- | --- |
+| `browsers/scripts/install-browser-policies.sh` | root | Extension auto-install policies under `/etc` |
+| `browsers/zen/scripts/install-zen-shortcuts.sh` | user | Keyboard shortcuts into every Zen profile |
+| `editors/vscodium/scripts/install-vscodium-extensions.sh` | user | Extensions from `data/extensions.txt` |
+| `onboarding/scripts/onboarding.sh` | user | First-run prompts; silent when already done |
+| `programming-languages/nodejs/scripts/fnm-bootstrap.sh` | user | fnm + Node versions |
+| `programming-languages/rust/scripts/rustup-default.sh` | user | Default rustup toolchain |
+| `shell/tmux/scripts/install-tpm.sh` | user | Clones tpm to `~/.tmux/plugins/tpm` |
+| `theming/wallpapers/scripts/install-wallpapers.sh` | user | Wallpaper collection into `~/Pictures` |
+| `wifi-rtl8821ce/scripts/tune-rtw88.sh` | root | rtw88 driver options |
+
+Modules with more to explain than a package list carry their own README:
+`browsers/zen`, `desktop-environments/niri`, `theming/wallpapers`. Everything
+else is covered by its `description` field.
+
 ## Keybindings
 
 Per-module references, since the chords have to be picked to not collide across

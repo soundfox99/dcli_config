@@ -52,6 +52,12 @@ Zen's own defaults worth knowing, left as shipped: `Ctrl+S` toggles compact
 mode (not save — save moved to `Ctrl+Alt+S`), `Ctrl+Shift+D` pins a tab,
 `Alt+1`…`Alt+9` select tabs, `Ctrl+O` expands Glance.
 
+**`Ctrl+Shift+S` — full-page screenshot.** Firefox's capture tool, and the one
+thing an OS screenshot cannot do: it grabs the entire scrollable page, not just
+the viewport. It was unreachable until niri's `shell-switch` bind was removed —
+the compositor grabbed the chord first. niri's own screenshots are separate and
+unaffected: `Mod+Shift+S`, `Ctrl+Print`, `Alt+Print`.
+
 ## Editing the bindings
 
 Edit `data/keyboard-shortcuts.json`, close Zen, then re-run the hook:
@@ -94,3 +100,7 @@ and a devtools action on the same chord.
 and rewrites `zen-keyboard-shortcuts.json` on change and on exit, so edits made
 while it is running are silently discarded. The hook enforces this by refusing
 to run when a `zen`/`zen-bin` process is alive.
+
+**The hook de-escalates to `$SUDO_USER`** before reading `$HOME`, since profiles
+are user-owned and `dcli sync` runs under sudo. See the root README's hooks
+section.
