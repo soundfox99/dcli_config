@@ -10,6 +10,7 @@ return {
         -- Conditional / system-wide
         "hardware",
         "system-packages-arch-desktop",
+        "wifi-rtl8821ce/module", -- RTL8821CE (rtw88) disconnect/throughput fix
 
         -- Theming, fonts, notifications
         "fonts/module",
