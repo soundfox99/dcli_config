@@ -1,0 +1,39 @@
+{
+  "_comment": [
+    "Zen keyboard shortcut overrides. Only the bindings that differ from Zen's",
+    "shipped defaults live here; the deploy script merges them onto whatever",
+    "table Zen generated, so a version bump that regenerates the defaults does",
+    "not fight a pinned copy of all ~128 entries.",
+    "",
+    "Chord syntax: Ctrl / Alt / Shift joined by +, key last. Ctrl maps to Zen's",
+    "'accel' modifier (Ctrl on Linux). VK_* names bind a keycode, not a char.",
+    "",
+    "Super/Meta is deliberately unused: niri owns Mod as its compositor key and",
+    "would swallow the chord before Zen ever sees it."
+  ],
+
+  "bind": {
+    "zen-workspace-switch-1": "Ctrl+Alt+1",
+    "zen-workspace-switch-2": "Ctrl+Alt+2",
+    "zen-workspace-switch-3": "Ctrl+Alt+3",
+    "zen-workspace-switch-4": "Ctrl+Alt+4",
+    "zen-workspace-switch-5": "Ctrl+Alt+5",
+    "zen-workspace-switch-6": "Ctrl+Alt+6",
+    "zen-workspace-switch-7": "Ctrl+Alt+7",
+    "zen-workspace-switch-8": "Ctrl+Alt+8",
+    "zen-workspace-switch-9": "Ctrl+Alt+9",
+    "zen-workspace-switch-10": "Ctrl+Alt+0",
+    "zen-workspace-create": "Ctrl+Alt+N",
+
+    "zen-toggle-sidebar": "Ctrl+Alt+Z",
+    "zen-compact-mode-show-sidebar": "Ctrl+Alt+B",
+    "zen-duplicate-tab": "Ctrl+Alt+D",
+    "key_addTabSplitView": "Ctrl+Alt+A",
+    "key_separateTabSplitView": "Ctrl+Alt+E"
+  },
+
+  "retire": {
+    "viewOpenTabsSidebarKb": "sidebar.revamp is false and locked in Zen's defaults, so viewOpenTabsSidebar is never registered as a panel; the key only toggled the sidebar onto whatever panel was last open (bookmarks). Unbound to free Ctrl+Alt+U for zen-split-view-unsplit.",
+    "toggleSidebarKb": "Firefox's sidebar toggle, lands on the bookmarks panel. Zen's own zen-toggle-sidebar takes over Ctrl+Alt+Z."
+  }
+}
