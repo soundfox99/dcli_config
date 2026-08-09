@@ -135,9 +135,19 @@ dropped from `module.lua` rather than given a second, differently-themed
 launcher. It is still installed on this host; `dcli remove fuzzel` to actually
 uninstall, since auto-prune is disabled.
 
-**The locker is noctalia, not swaylock.** `startup.kdl` has swayidle call
-`qs -c noctalia-shell ipc call lockscreen lock` for the 30-minute idle lock, so
-`Super+Alt+L` calls the same thing. One locker, not two.
+**The locker is noctalia, not swaylock.** Both the 30-minute idle lock
+(`startup.kdl`, via swayidle) and `Super+Alt+L` call
+`qs -c noctalia-shell ipc call lockScreen lock`. One locker, not two.
+
+**noctalia's IPC target names are case-sensitive and fail silently.** The target
+is `lockScreen`, camelCase. Anything else — `lockscreen` included — prints
+`Target not found.` and exits **0**, so a wrong name looks like success and the
+lock simply never fires. Both call sites had `lockscreen` and neither worked,
+which meant idle auto-lock was dead too. `qs -c noctalia-shell ipc show` lists
+every target and function; check spelling there before binding a new one.
+
+There is also a `sessionMenu` target with `lock()` and `lockAndSuspend()`. That
+one goes through the session menu; `lockScreen lock` locks directly.
 
 **`Ctrl+Shift+S` is deliberately unbound**, left to Zen's full-page screenshot.
 It used to spawn `shell-switch` — a switcher between noctalia and

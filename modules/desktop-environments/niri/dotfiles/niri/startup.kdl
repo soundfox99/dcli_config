@@ -2,7 +2,7 @@
 
 // noctalia itself is started from shell-switcher-startup.kdl.
 spawn-at-startup "sunshine"
-spawn-at-startup "swayidle" "-w" "timeout" "1800" "qs -c noctalia-shell ipc call lockscreen lock"
+spawn-at-startup "swayidle" "-w" "timeout" "1800" "qs -c noctalia-shell ipc call lockScreen lock"
 spawn-at-startup "sway-audio-idle-inhibit"
 
 // To run a shell command (with variables, pipes, etc.), use spawn-sh-at-startup:
