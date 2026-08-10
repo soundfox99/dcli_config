@@ -3,6 +3,7 @@ return {
     packages = { "tmux" },
     dotfiles = {
         { source = "dotfiles/.tmux.conf", target = "~/.tmux.conf" },
+        { source = "dotfiles/tmux/current-theme.conf", target = "~/.config/tmux/current-theme.conf" },
     },
     post_install_hook = "scripts/install-tpm.sh",
     -- "always" not "once": the hook clones into $HOME and previously ran as

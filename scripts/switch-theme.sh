@@ -11,6 +11,7 @@
 #   - modules/theming/active-theme.txt              (records the choice)
 #   - modules/terminals/kitty/dotfiles/kitty/current-theme.conf   (copy of themes/<name>.conf)
 #   - modules/shell/starship/dotfiles/starship.toml (palette = '...' line)
+#   - modules/shell/tmux/dotfiles/tmux/current-theme.conf         (copy of themes/<name>.conf)
 #   - gsettings org.gnome.desktop.interface gtk-theme (if the GTK theme is installed)
 
 set -euo pipefail
@@ -85,6 +86,13 @@ if [ -f "${NIRI_DIR}/themes/${THEME}.kdl" ]; then
     echo "  niri: themes/${THEME}.kdl -> current-theme.kdl"
 fi
 
+# 5c. tmux palette (declares the theme plugin too, so tpm needs prefix + I after a switch)
+TMUX_DIR="${REPO_ROOT}/modules/shell/tmux/dotfiles/tmux"
+if [ -f "${TMUX_DIR}/themes/${THEME}.conf" ]; then
+    cp "${TMUX_DIR}/themes/${THEME}.conf" "${TMUX_DIR}/current-theme.conf"
+    echo "  tmux: themes/${THEME}.conf -> current-theme.conf"
+fi
+
 # 6. GTK / cursor — gsettings; skip silently if running headless or theme not installed
 if command -v gsettings >/dev/null 2>&1 && [ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]; then
     if gsettings list-recursively org.gnome.desktop.interface >/dev/null 2>&1; then
@@ -100,4 +108,5 @@ echo "  bash:     start a new shell  (starship reads at startup)"
 echo "  hyprland: hyprctl reload    (if running)"
 echo "  waybar:   pkill -SIGUSR2 waybar   (if running)"
 echo "  niri:     niri msg action reload-config   (if running)"
+echo "  tmux:     prefix + I to fetch the new theme plugin, then prefix + r"
 echo "  GTK apps: log out + back in for full effect"
