@@ -1,11 +1,33 @@
 // Niri output configuration.
-// Default placeholder — edit per host to add output {} blocks with mode,
-// scale, position, and transform. Run `niri msg outputs` to list connectors.
 //
-// Example:
-// output "DP-1" {
-//     mode "2560x1440@165"
-//     scale 1.0
-//     position x=0 y=0
-//     variable-refresh-rate
-// }
+// Without explicit positions niri auto-places outputs in connector order,
+// which put DP-1 at x=0 and HDMI-A-1 at x=1920 — the reverse of how they sit
+// on the desk, so moving left/right landed on the wrong screen.
+//
+// Arrangement (arch-desktop): AOC on the LEFT, Dell on the RIGHT.
+//
+//     x=0            x=1600         x=3520
+//     +--------------+--------------+
+//     | HDMI-A-1     | DP-1         |
+//     | AOC 1600x900 | Dell 1920x1080
+//
+// Only position is pinned; mode and scale stay on niri's preferred defaults
+// (1600x900@60 and 1920x1080@60 respectively), so a monitor swap degrades
+// gracefully instead of failing to find a hardcoded mode.
+//
+// Both are top-aligned (y=0). If the pointer catching on the height
+// difference is annoying, bottom-align the shorter one with y=180
+// (1080 - 900). Run `niri msg outputs` for connector names and geometry.
+//
+// To try a different arrangement without editing this file — takes effect
+// instantly, forgotten on the next config reload:
+//     niri msg output HDMI-A-1 position set 0 0
+//     niri msg output DP-1 position set 1600 0
+
+output "HDMI-A-1" {
+    position x=0 y=0
+}
+
+output "DP-1" {
+    position x=1600 y=0
+}

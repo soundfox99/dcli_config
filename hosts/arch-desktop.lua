@@ -41,8 +41,11 @@ return {
         "programming-languages/nodejs",
         "programming-languages/ruby",
 
-        -- Apps
+        -- Apps — both browser modules: browsers/module is firefox + chromium
+        -- + brave, browsers/zen is Zen on its own. They don't conflict; the
+        -- split exists so the laptop can take Zen alone.
         "browsers/module",
+        "browsers/zen",
         "socials/module",
         "media/module",
         "torrents/module",
