@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Fetch the wallpaper collection into ~/Pictures/Wallpapers from GitHub's
 # tarball endpoint, then hand off to apply-wallpaper.sh to point the desktops
-# at the image named in data/wallpaper.
+# at the image named at the top of that script.
 #
 # The fetch lives in a function so that every outcome — up to date, adopted,
 # freshly downloaded, network down — still falls through to the apply step.

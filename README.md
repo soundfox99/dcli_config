@@ -86,7 +86,7 @@ Getting this wrong is silent: the hook succeeds, but writes into `/root`.
 | `programming-languages/nodejs/scripts/fnm-bootstrap.sh` | user | fnm + Node versions |
 | `programming-languages/rust/scripts/rustup-default.sh` | user | Default rustup toolchain |
 | `shell/tmux/scripts/install-tpm.sh` | user | Clones tpm to `~/.tmux/plugins/tpm` |
-| `theming/wallpapers/scripts/install-wallpapers.sh` | user | Wallpaper collection into `~/Pictures`, then chains `apply-wallpaper.sh` to set the shared wallpaper from `data/wallpaper` |
+| `theming/wallpapers/scripts/install-wallpapers.sh` | user | Wallpaper collection into `~/Pictures`, then chains `apply-wallpaper.sh` (edit the `WALLPAPER=` line at its top to change the wallpaper on every host) |
 | `wifi-rtl8821ce/scripts/tune-rtw88.sh` | root | rtw88 driver options |
 
 Modules with more to explain than a package list carry their own README:

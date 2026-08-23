@@ -1,8 +1,0 @@
-# The one wallpaper every host uses. Path is relative to ~/Pictures/Wallpapers,
-# i.e. relative to the dharmx/walls tree that install-wallpapers.sh extracts.
-# Blank lines and #-comments are ignored; the first remaining line wins.
-#
-# Applied by scripts/apply-wallpaper.sh on every `dcli sync`. To change the
-# wallpaper on all machines, edit this line and push.
-
-digital/a_car_on_a_road_with_purple_clouds_in_the_sky.png

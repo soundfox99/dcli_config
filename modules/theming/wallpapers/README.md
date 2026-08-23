@@ -51,15 +51,25 @@ Overrides both the stamp check and the adopt path. Partial downloads live in
 
 ## The shared wallpaper
 
-`data/wallpaper` names the one image every host displays, as a path relative to
-`~/Pictures/Wallpapers`. Edit that line and push, and the next `dcli sync` on
-each machine repoints it. That file is the single source of truth — nothing
-else in the repo records a wallpaper choice.
+One line at the top of `scripts/apply-wallpaper.sh`:
 
-`scripts/apply-wallpaper.sh` does the applying. It runs from the tail of
-`install-wallpapers.sh` (dcli allows one `post_install_hook` per module, and
-the image has to exist before anything can point at it), so it runs on every
-sync too.
+```sh
+WALLPAPER="digital/a_car_on_a_road_with_purple_clouds_in_the_sky.png"
+```
+
+Path is relative to `~/Pictures/Wallpapers`. **Edit it and push** — the next
+`dcli sync` on each machine repoints it. That line is the single source of
+truth; nothing else in the repo records a wallpaper choice.
+
+Run it directly to apply a change now:
+
+```sh
+./modules/theming/wallpapers/scripts/apply-wallpaper.sh
+```
+
+It also runs from the tail of `install-wallpapers.sh` — dcli allows one
+`post_install_hook` per module, and the image has to exist before anything can
+point at it — so a plain `dcli sync` applies it too.
 
 Two desktops, two storage schemes:
 
