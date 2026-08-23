@@ -49,6 +49,35 @@ Overrides both the stamp check and the adopt path. Partial downloads live in
 `~/Pictures/.walls-download` and resume on the next run, so an interrupted
 3.3 GB fetch doesn't restart from zero.
 
+## The shared wallpaper
+
+`data/wallpaper` names the one image every host displays, as a path relative to
+`~/Pictures/Wallpapers`. Edit that line and push, and the next `dcli sync` on
+each machine repoints it. That file is the single source of truth — nothing
+else in the repo records a wallpaper choice.
+
+`scripts/apply-wallpaper.sh` does the applying. It runs from the tail of
+`install-wallpapers.sh` (dcli allows one `post_install_hook` per module, and
+the image has to exist before anything can point at it), so it runs on every
+sync too.
+
+Two desktops, two storage schemes:
+
+| Desktop | How it's set | Needs |
+| --- | --- | --- |
+| KDE Plasma | `plasma-apply-wallpaperimage` over the session bus | a running `plasmashell` |
+| niri | `qs -c noctalia-shell ipc call wallpaper set` **and** a direct write to `~/.cache/noctalia/wallpapers.json` | nothing |
+
+Neither half is fatal. Syncing from a TTY, or from the other DE's session,
+just skips whatever it can't reach and picks it up next time.
+
+The cache write is not redundant with the IPC call. noctalia keys wallpapers by
+**output name** — `eDP-1` on the laptop, `DP-n` on the desktop — so that file
+can't be tracked in the repo and copied around, and the IPC call only touches
+the current output. The machine-independent key is `defaultWallpaper`, which any
+unseen output inherits, and only the direct write sets it. That's the part that
+actually makes a fresh host come up on the right image.
+
 ## Changing the source
 
 `REPO` and `BRANCH` at the top of the script. Delete `.walls-version` in the

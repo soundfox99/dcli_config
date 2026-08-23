@@ -7,6 +7,7 @@ return {
     packages = {
         "git",      -- hook uses git ls-remote to resolve upstream HEAD
         "curl",
+        "python",   -- apply-wallpaper.sh edits noctalia's wallpapers.json
     },
     post_install_hook = "scripts/install-wallpapers.sh",
     hook_behavior = "always",
