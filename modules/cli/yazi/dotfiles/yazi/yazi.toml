@@ -1,0 +1,17 @@
+[opener]
+calc = [
+	{ run = 'localc "$@"', orphan = true, desc = "LibreOffice Calc" },
+	{ run = '${EDITOR:-nvim} "$@"', block = true, desc = "Edit as text" },
+]
+writer = [
+	{ run = 'lowriter "$@"', orphan = true, desc = "LibreOffice Writer" },
+]
+
+[open]
+prepend_rules = [
+	{ url = "*.csv", use = [ "calc", "edit", "open" ] },
+	{ url = "*.tsv", use = [ "calc", "edit", "open" ] },
+	{ mime = "text/csv", use = [ "calc", "edit", "open" ] },
+	{ mime = "application/vnd.oasis.opendocument.*", use = [ "writer", "open" ] },
+	{ mime = "application/vnd.openxmlformats-officedocument.*", use = [ "writer", "open" ] },
+]

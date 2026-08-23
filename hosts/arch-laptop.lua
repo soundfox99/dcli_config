@@ -22,6 +22,7 @@ return {
 
         -- CLI + shell
         "cli/module",
+        "cli/yazi",
         "shell/bash",
         "shell/starship",
         "shell/tmux",
@@ -117,16 +118,25 @@ return {
             theme = "Bibata-Modern-Ice",
             size = 24,
         },
-        default_apps = {
-            scope = "user",
-            browser = "zen.desktop",
-            text_editor = "vscodium",
-            file_manager = "dolphin",
-            video_player = "mpv",
-            audio_player = "mpv",
-            image_viewer = "dolphin",
-            pdf_viewer = "zen.desktop",
-            meme_types = {},
+    },
+
+    default_apps = {
+        scope = "user",
+        browser = "zen.desktop",
+        text_editor = "vscodium",
+        file_manager = "org.kde.dolphin.desktop",
+        video_player = "mpv",
+        audio_player = "mpv",
+        image_viewer = "org.kde.dolphin.desktop",
+        pdf_viewer = "zen.desktop",
+        mime_types = {
+            ["text/csv"] = "libreoffice-calc.desktop",
+            ["application/vnd.oasis.opendocument.spreadsheet"] = "libreoffice-calc.desktop",
+            ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"] = "libreoffice-calc.desktop",
+            ["application/vnd.oasis.opendocument.text"] = "libreoffice-writer.desktop",
+            ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"] = "libreoffice-writer.desktop",
+            ["application/vnd.oasis.opendocument.presentation"] = "libreoffice-impress.desktop",
+            ["application/vnd.openxmlformats-officedocument.presentationml.presentation"] = "libreoffice-impress.desktop",
         },
     },
 }
