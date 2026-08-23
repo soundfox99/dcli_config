@@ -15,6 +15,7 @@ return {
         -- Theming, fonts, notifications
         "fonts/module",
         "theming/module",
+        "theming/wallpapers",
         "notifications/module",
 
         -- CLI + shell
