@@ -1,7 +1,16 @@
 // Start up Commands
 
 // noctalia itself is started from shell-switcher-startup.kdl.
-spawn-at-startup "sunshine"
+
+// Polkit authentication agent. niri is the only DE on arch-desktop now, so
+// nothing else brings one up — without this, any GUI action needing auth
+// (mounting a disk, GParted, some updaters) silently gets no prompt.
+spawn-at-startup "/usr/lib/polkit-kde-authentication-agent-1"
+
+// sunshine is not installed and is not declared by any module, so this spawn
+// failed silently at every login. Re-enable it together with a "sunshine"
+// entry in the niri module's package list if you actually want game streaming.
+// spawn-at-startup "sunshine"
 spawn-at-startup "swayidle" "-w" "timeout" "1800" "qs -c noctalia-shell ipc call lockScreen lock"
 spawn-at-startup "sway-audio-idle-inhibit"
 

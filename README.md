@@ -26,12 +26,24 @@ cd ~/.config/arch-config
 # 5. Unlock encrypted files (bookmarks etc.) — needs the key from your backup
 git-crypt unlock /path/to/arch-dcli-config.key
 
-# 6. Sync everything
+# 6. Build the two Noctalia packages the AUR no longer carries
+#    (skip on a host that doesn't enable desktop-environments/niri)
+for p in noctalia-qs noctalia-shell-git; do
+  (cd modules/desktop-environments/niri/pkgbuilds/$p && makepkg -si)
+done
+
+# 7. Sync everything
 dcli sync           # installs packages, enables services, deploys dotfiles
 dcli update --devel # full system upgrade + AUR refresh
 ```
 
 Open a new terminal afterward so `.bashrc` (cargo, fnm) loads.
+
+Step 6 is not optional on a niri host: `noctalia-qs` and `noctalia-shell-git`
+were deleted from the AUR, so `dcli sync` cannot install them and the desktop
+comes up with no bar, no launcher and no wallpaper. See
+`modules/desktop-environments/niri/pkgbuilds/README.md` — which also covers the
+rebuild `noctalia-qs` needs after **every Qt 6 point release**.
 
 ## Layout
 
@@ -44,6 +56,8 @@ modules/
   declared-packages.lua       Auto-managed by `dcli install`
   system-packages-<host>/     Auto-synced system packages (don't hand-edit)
   <category>/<name>/module.lua + dotfiles/    Feature modules
+  desktop-environments/niri/pkgbuilds/        Vendored build recipes for two
+                                              packages deleted from the AUR
   scripts/                    Cross-module hook scripts (multilib, fstrim, ...)
 modules/browsers/data/*-bookmarks.html            git-crypt encrypted
 scripts/setup-repo-encryption.sh   One-time git-crypt init
@@ -90,8 +104,9 @@ Getting this wrong is silent: the hook succeeds, but writes into `/root`.
 | `wifi-rtl8821ce/scripts/tune-rtw88.sh` | root | rtw88 driver options |
 
 Modules with more to explain than a package list carry their own README:
-`browsers/zen`, `desktop-environments/niri`, `theming/wallpapers`. Everything
-else is covered by its `description` field.
+`browsers/zen`, `desktop-environments/niri`,
+`desktop-environments/niri/pkgbuilds`, `theming/wallpapers`. Everything else is
+covered by its `description` field.
 
 ## Keybindings
 
@@ -172,21 +187,41 @@ dcli sync
 
 `config.lua` auto-detects the hostname; just creating `hosts/<hostname>.lua` is enough.
 
-## Switching desktop environments
+## Desktop environments
 
-KDE Plasma is active by default. Niri and Hyprland modules are present but commented out in the host file. To switch:
+Per host, as of now:
+
+| Host | DE modules enabled |
+| --- | --- |
+| `arch-desktop` | `niri` only |
+| `arch-laptop` | `kde-plasma` + `niri` |
+
+The `hyprland` module still exists but is enabled on neither host.
+
+**The DE modules do not conflict.** Any number of them can be enabled at once —
+they install side-by-side and SDDM picks the session at login, remembering the
+last one per user. Enabling a module only means "deploy this DE's packages and
+dotfiles here"; it does not select the session.
+
+To add or drop one, edit `enabled_modules` in `hosts/<host>.lua`:
 
 ```lua
--- in hosts/<host>.lua
 enabled_modules = {
   ...
-  -- "desktop-environments/kde-plasma",
-  "desktop-environments/niri",         -- or hyprland
+  "desktop-environments/niri",
+  -- "desktop-environments/kde-plasma",   -- dropped from this host
   ...
 }
 ```
 
-Then `dcli sync` and log out / pick the session from SDDM. The three DE modules conflict via `conflicts = {...}` so only one is ever active.
+Then `dcli sync`. Note `auto_prune = false` on both hosts, so removing a module
+stops it being *declared* but does not uninstall anything already on the
+machine — clear those out with `just clean` or `pacman -Rns` when you want the
+disk space back.
+
+Because `arch-desktop` runs niri alone, the niri module has to declare
+everything the session needs (`qt6-wayland` for Quickshell, `polkit-kde-agent`
+for auth prompts) rather than inheriting it from a heavier DE.
 
 ## Updates
 

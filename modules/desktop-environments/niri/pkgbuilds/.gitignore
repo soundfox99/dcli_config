@@ -1,0 +1,13 @@
+# makepkg writes its artifacts next to the PKGBUILD, and
+# scripts/safe-commit-push.sh runs `git add -A` — so an untracked 25 MB tarball
+# or bare clone would land in an auto-commit.
+#
+# Whitelist rather than blocklist: makepkg names its bare git clone after the
+# source (here "noctalia-shell/"), so artifact names vary and a blocklist
+# silently misses them.
+*
+!*/
+!.gitignore
+!README.md
+!*/PKGBUILD
+!*/*.install

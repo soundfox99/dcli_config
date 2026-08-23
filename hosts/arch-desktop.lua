@@ -1,6 +1,7 @@
 -- Host configuration for arch-desktop (Personal Desktop)
--- KDE Plasma is the active DE; niri and hyprland modules are present but
--- opt-in (uncomment in enabled_modules to switch).
+-- niri is the daily driver and the only DE deployed here. kde-plasma and
+-- hyprland modules still exist in the repo (the laptop enables kde-plasma),
+-- they are just not enabled on this host.
 
 return {
     host = "arch-desktop",
@@ -59,13 +60,11 @@ return {
         -- ComfyUI (Stable Diffusion image gen — installs in ~/ComfyUI/.venv)
         "comfyui/module",
 
-        -- Desktop environments — all install side-by-side. SDDM lets you
-        -- pick the session at login; whatever you used last is remembered
-        -- per user. KDE Plasma is the current daily-driver. Comment any
-        -- you don't want packages/dotfiles deployed for.
-        "desktop-environments/kde-plasma",
+        -- Desktop environment — niri only. SDDM still picks the session at
+        -- login, but niri is the only one this host deploys packages and
+        -- dotfiles for. Re-add "desktop-environments/kde-plasma" or
+        -- "desktop-environments/hyprland" here to bring either back.
         "desktop-environments/niri",
-        "desktop-environments/hyprland",
 
         -- Interactive first-run setup (SSH key, git-crypt unlock, docker group)
         "onboarding/module",

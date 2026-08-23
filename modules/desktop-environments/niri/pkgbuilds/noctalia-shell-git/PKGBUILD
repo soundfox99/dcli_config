@@ -1,0 +1,50 @@
+# Maintainer: Lysec <itslysec@gmail.com>
+# Co-Maintainer: Kevin <github@kev314.dev>
+#
+# VENDORED COPY — see ../README.md.
+# Taken verbatim from the AUR package noctalia-shell-git before it was deleted,
+# with one change: the source URL below. Do not "clean up" the rest.
+pkgname=noctalia-shell-git
+pkgver=4.7.7.r35.ga48885b9f
+pkgrel=1
+pkgdesc="A sleek and minimal desktop shell thoughtfully crafted for Wayland, built with Quickshell. (git version)"
+arch=('any')
+# Upstream renamed noctalia-shell -> noctalia when v5 landed, so the old name
+# now only resolves through GitHub's redirect. Point at the canonical repo.
+url="https://github.com/noctalia-dev/noctalia"
+license=('MIT')
+depends=(
+  'noctalia-qs'
+  'imagemagick'
+  'brightnessctl'
+  'ffmpeg'
+  'qt6-multimedia'
+  'python'
+  'wlr-randr'
+)
+optdepends=(
+  'cliphist: For clipboard history support'
+  'wlsunset: For supporting NightLight'
+  'power-profiles-daemon: For power profile management'
+  'ddcutil: For external display brightness control'
+)
+makedepends=('git')
+provides=('noctalia-shell')
+conflicts=('noctalia-shell')
+# The "noctalia-shell::" prefix forces the clone directory to keep its old name
+# so pkgver() and package() below resolve. legacy-v4 is upstream's frozen v4
+# branch — the last line that still uses Quickshell (see ../README.md).
+source=("noctalia-shell::git+$url.git#branch=legacy-v4")
+sha256sums=('SKIP')
+
+pkgver() {
+    cd "$srcdir/noctalia-shell"
+    git describe --long --tags | sed 's/\([^-]*-g\)/r\1/;s/-/./g;s/^v//'
+}
+
+package() {
+  cd "$srcdir/noctalia-shell"
+  
+  install -dm755 "$pkgdir/etc/xdg/quickshell/noctalia-shell"
+  cp -r ./* "$pkgdir/etc/xdg/quickshell/noctalia-shell/"
+}
