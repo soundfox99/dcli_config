@@ -5,6 +5,12 @@
 # policy file from the current data file, so removing an ID un-deploys it.
 #
 # Runs as root (writes under /etc).
+#
+# With no arguments, writes policies for all three browsers — that's what
+# browsers/module.lua (firefox + chromium + brave) wants. Pass browser names to
+# write only those, which is how a host that installs one browser out of the
+# set avoids creating /etc/firefox and /etc/chromium for browsers it doesn't
+# have. See browsers/brave/scripts/install-brave-policy.sh.
 
 set -euo pipefail
 
@@ -63,6 +69,14 @@ EOF
     echo "${etc_dir}: ${#ids[@]} extension(s)."
 }
 
-write_firefox_policy
-write_chromium_style_policy /etc/chromium "${DATA_DIR}/chromium-extensions.txt"
-write_chromium_style_policy /etc/brave    "${DATA_DIR}/brave-extensions.txt"
+browsers=("$@")
+[ ${#browsers[@]} -eq 0 ] && browsers=(firefox chromium brave)
+
+for browser in "${browsers[@]}"; do
+    case "${browser}" in
+        firefox)  write_firefox_policy ;;
+        chromium) write_chromium_style_policy /etc/chromium "${DATA_DIR}/chromium-extensions.txt" ;;
+        brave)    write_chromium_style_policy /etc/brave    "${DATA_DIR}/brave-extensions.txt" ;;
+        *)        echo "unknown browser: ${browser}" >&2; exit 1 ;;
+    esac
+done

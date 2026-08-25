@@ -42,9 +42,10 @@ return {
         "programming-languages/nodejs",
         "programming-languages/ruby",
 
-        -- Apps — Zen is the only browser on the laptop, so browsers/module
-        -- (firefox + chromium + brave) is deliberately not enabled here.
+        -- Apps — Zen and Brave only, so browsers/module (which would also drag
+        -- in firefox and chromium) is deliberately not enabled here.
         "browsers/zen",
+        "browsers/brave",
         "socials/module",
         "media/module",
         "torrents/module",

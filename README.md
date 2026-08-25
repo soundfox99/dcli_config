@@ -93,7 +93,8 @@ Getting this wrong is silent: the hook succeeds, but writes into `/root`.
 
 | Hook | Runs as | What it does |
 | --- | --- | --- |
-| `browsers/scripts/install-browser-policies.sh` | root | Extension auto-install policies under `/etc` |
+| `browsers/scripts/install-browser-policies.sh` | root | Extension auto-install policies under `/etc`. No args = all three browsers; pass names for a subset |
+| `browsers/brave/scripts/install-brave-policy.sh` | root | Brave only — wrapper that calls the above with `brave` |
 | `browsers/zen/scripts/install-zen-shortcuts.sh` | user | Keyboard shortcuts into every Zen profile |
 | `editors/vscodium/scripts/install-vscodium-extensions.sh` | user | Extensions from `data/extensions.txt` |
 | `onboarding/scripts/onboarding.sh` | user | First-run prompts; silent when already done |
