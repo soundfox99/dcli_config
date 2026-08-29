@@ -15,14 +15,15 @@ return {
         "system-packages-arch-laptop",
 
         -- Theming, fonts, notifications
-        "fonts/module",
-        "theming/module",
+        "fonts",
+        "theming",
         "theming/wallpapers",
-        "notifications/module",
+        "notifications",
 
         -- CLI + shell
-        "cli/module",
+        "cli",
         "cli/yazi",
+        "fetch",
         "shell/bash",
         "shell/starship",
         "shell/tmux",
@@ -46,18 +47,19 @@ return {
         -- in firefox and chromium) is deliberately not enabled here.
         "browsers/zen",
         "browsers/brave",
-        "socials/module",
-        "media/module",
-        "torrents/module",
-        "flatpak/module",
+        "socials",
+        "media",
+        "torrents",
+        "crypto",
+        "flatpak",
 
         -- VMs and containers
-        "containers/module",
-        "virtualization/module",
-        "vpns/module",
+        "containers",
+        "virtualization",
+        "vpns",
 
         -- LLMs
-        "llms/module",
+        "llms",
 
         -- Desktop environments — both install side-by-side; SDDM picks the
         -- session at login. KDE Plasma is the current daily-driver here.
@@ -65,7 +67,7 @@ return {
         "desktop-environments/niri",
 
         -- Interactive first-run setup (SSH key, git-crypt unlock, docker group)
-        "onboarding/module",
+        "onboarding",
 
         -- Ad-hoc dcli installs land here
         "declared-packages",

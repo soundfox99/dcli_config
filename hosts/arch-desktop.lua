@@ -11,17 +11,18 @@ return {
         -- Conditional / system-wide
         "hardware",
         "system-packages-arch-desktop",
-        "wifi-rtl8821ce/module", -- RTL8821CE (rtw88) disconnect/throughput fix
+        "wifi-rtl8821ce", -- RTL8821CE (rtw88) disconnect/throughput fix
 
         -- Theming, fonts, notifications
-        "fonts/module",
-        "theming/module",
+        "fonts",
+        "theming",
         "theming/wallpapers",
-        "notifications/module",
+        "notifications",
 
         -- CLI + shell
-        "cli/module",
+        "cli",
         "cli/yazi",
+        "fetch",
         "shell/bash",
         "shell/starship",
         "shell/tmux",
@@ -41,27 +42,28 @@ return {
         "programming-languages/nodejs",
         "programming-languages/ruby",
 
-        -- Apps — both browser modules: browsers/module is firefox + chromium
-        -- + brave, browsers/zen is Zen on its own. They don't conflict; the
+        -- Apps — both browser modules: "browsers" is firefox + chromium
+        -- + brave, "browsers/zen" is Zen on its own. They don't conflict; the
         -- split exists so the laptop can take Zen alone.
-        "browsers/module",
+        "browsers",
         "browsers/zen",
-        "socials/module",
-        "media/module",
-        "torrents/module",
-        "flatpak/module",
-        "games/module",
+        "socials",
+        "media",
+        "torrents",
+        "crypto",
+        "flatpak",
+        "games",
 
         -- VMs and containers
-        "containers/module",
-        "virtualization/module",
-        "vpns/module",
+        "containers",
+        "virtualization",
+        "vpns",
 
         -- LLMs
-        "llms/module",
+        "llms",
 
         -- ComfyUI (Stable Diffusion image gen — installs in ~/ComfyUI/.venv)
-        "comfyui/module",
+        "comfyui",
 
         -- Desktop environment — niri only. SDDM still picks the session at
         -- login, but niri is the only one this host deploys packages and
@@ -70,7 +72,7 @@ return {
         "desktop-environments/niri",
 
         -- Interactive first-run setup (SSH key, git-crypt unlock, docker group)
-        "onboarding/module",
+        "onboarding",
 
         -- Ad-hoc dcli installs land here
         "declared-packages",

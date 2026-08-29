@@ -8,6 +8,23 @@ set -euo pipefail
 
 REPO_ROOT="$(git -C "$(dirname "$0")/../../.." rev-parse --show-toplevel 2>/dev/null || pwd)"
 
+# ─── Configuration ──────────────────────────────────────────────────────────
+# data/onboarding.conf is sourced as bash and is tracked in git, so whatever it
+# sets reproduces on a fresh clone. It is optional; the defaults below apply
+# when it is absent.
+CONFIG_FILE="$(cd "$(dirname "$0")/.." && pwd)/data/onboarding.conf"
+if [ -f "${CONFIG_FILE}" ]; then
+    # shellcheck source=/dev/null
+    . "${CONFIG_FILE}"
+fi
+
+# Git forges probed in step 1, space separated. Precedence:
+#   DCLI_ONBOARDING_GIT_FORGES (env, one-off)  >  data/onboarding.conf  >  default
+# Use ${VAR-default}, never ${VAR:-default}: the unset-vs-empty distinction is
+# load-bearing here, since an explicitly empty list means "skip step 1
+# entirely", not "fall back to the default".
+GIT_FORGES="${DCLI_ONBOARDING_GIT_FORGES-${GIT_FORGES-github.com gitlab.com}}"
+
 prompt_yes() {
     local q="$1"
     local ans
@@ -16,9 +33,11 @@ prompt_yes() {
 }
 
 # ─── 1. SSH key for git remotes ─────────────────────────────────────────────
-# Probe live SSH auth against github.com and gitlab.com. Either succeeding is
-# proof that a key exists AND is registered on a forge. Only generate/prompt
-# when neither host accepts our key.
+# Probe live SSH auth against each forge in GIT_FORGES. Any one of them
+# accepting the key is proof that a key exists AND is registered on a forge,
+# which is all this step needs — so a forge you don't use buys nothing and
+# costs a network round trip per sync. Drop it from GIT_FORGES and onboarding
+# stops contacting it at all. An empty GIT_FORGES skips this step outright.
 
 git_ssh_works() {
     local host="$1"
@@ -28,35 +47,55 @@ git_ssh_works() {
         -o BatchMode=yes \
         -o ConnectTimeout=5 \
         "git@${host}" 2>&1) || true
+    # Both matchers stay regardless of which forges are configured: they key off
+    # the greeting the far end sends, so they also cover self-hosted instances.
     [[ "${out}" == *"successfully authenticated"* ]] \
         || [[ "${out}" == *"Welcome to GitLab"* ]]
 }
 
-if git_ssh_works github.com || git_ssh_works gitlab.com; then
-    : # SSH already wired up to at least one forge — nothing to do
-else
-    echo
-    echo "[onboarding] No working git SSH key (github.com + gitlab.com both rejected auth)."
+read -ra git_forges <<< "${GIT_FORGES}"
 
-    if [ -f "${HOME}/.ssh/id_ed25519.pub" ] || [ -f "${HOME}/.ssh/id_rsa.pub" ]; then
-        echo "  An SSH key exists locally but isn't registered with any forge."
-        pubkey="${HOME}/.ssh/id_ed25519.pub"
-        [ -f "${pubkey}" ] || pubkey="${HOME}/.ssh/id_rsa.pub"
-        echo "  Public key — add it on GitHub / GitLab → Settings → SSH keys:"
-        echo "  ─────────────────────────────────────────────────────────────"
-        cat "${pubkey}"
-        echo "  ─────────────────────────────────────────────────────────────"
-        read -rp "  Press Enter once the key is added on the remote host... " _ </dev/tty
-    elif prompt_yes "Generate an ed25519 keypair now?"; then
-        mkdir -p "${HOME}/.ssh" && chmod 700 "${HOME}/.ssh"
-        read -rp "  Email for key comment (e.g. github noreply addr): " email </dev/tty
-        ssh-keygen -t ed25519 -C "${email}" -f "${HOME}/.ssh/id_ed25519" -N ""
+if [ ${#git_forges[@]} -eq 0 ]; then
+    : # GIT_FORGES is empty — SSH key setup opted out entirely
+else
+    # "github.com" / "github.com / gitlab.com" — for the prompts below.
+    forge_label="$(printf '%s / ' "${git_forges[@]}")"
+    forge_label="${forge_label% / }"
+
+    ssh_authenticated=false
+    for forge in "${git_forges[@]}"; do
+        if git_ssh_works "${forge}"; then
+            ssh_authenticated=true
+            break
+        fi
+    done
+
+    if [ "${ssh_authenticated}" = true ]; then
+        : # SSH already wired up to at least one forge — nothing to do
+    else
         echo
-        echo "  Public key — add this on GitHub / GitLab → Settings → SSH keys:"
-        echo "  ─────────────────────────────────────────────────────────────"
-        cat "${HOME}/.ssh/id_ed25519.pub"
-        echo "  ─────────────────────────────────────────────────────────────"
-        read -rp "  Press Enter once the key is added on the remote host... " _ </dev/tty
+        echo "[onboarding] No working git SSH key (${forge_label} rejected auth)."
+
+        if [ -f "${HOME}/.ssh/id_ed25519.pub" ] || [ -f "${HOME}/.ssh/id_rsa.pub" ]; then
+            echo "  An SSH key exists locally but isn't registered with any forge."
+            pubkey="${HOME}/.ssh/id_ed25519.pub"
+            [ -f "${pubkey}" ] || pubkey="${HOME}/.ssh/id_rsa.pub"
+            echo "  Public key — add it on ${forge_label} → Settings → SSH keys:"
+            echo "  ─────────────────────────────────────────────────────────────"
+            cat "${pubkey}"
+            echo "  ─────────────────────────────────────────────────────────────"
+            read -rp "  Press Enter once the key is added on the remote host... " _ </dev/tty
+        elif prompt_yes "Generate an ed25519 keypair now?"; then
+            mkdir -p "${HOME}/.ssh" && chmod 700 "${HOME}/.ssh"
+            read -rp "  Email for key comment (e.g. github noreply addr): " email </dev/tty
+            ssh-keygen -t ed25519 -C "${email}" -f "${HOME}/.ssh/id_ed25519" -N ""
+            echo
+            echo "  Public key — add this on ${forge_label} → Settings → SSH keys:"
+            echo "  ─────────────────────────────────────────────────────────────"
+            cat "${HOME}/.ssh/id_ed25519.pub"
+            echo "  ─────────────────────────────────────────────────────────────"
+            read -rp "  Press Enter once the key is added on the remote host... " _ </dev/tty
+        fi
     fi
 fi
 
