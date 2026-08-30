@@ -1,0 +1,11 @@
+[Unit]
+Description=Regenerate Obsidian markdown from Supernote .note files
+Documentation=file:%h/.config/arch-config/modules/supernote/README.md
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/supernote-note2md
+# Incremental: only .note files newer than their .md are reprocessed, so a run
+# with nothing to do costs ~30ms.
+Nice=10
+IOSchedulingClass=idle

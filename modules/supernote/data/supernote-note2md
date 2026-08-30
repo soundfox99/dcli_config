@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+"""Generate Obsidian-readable .md companions for Supernote .note files.
+
+Extracts the device's handwriting-recognition text via supernote-tool and writes
+a sibling .md. The .note stays put and stays viewable through the Supernote
+Obsidian plugin; this adds the searchable, linkable text layer that Obsidian's
+search, graph and Autolink can operate on.
+
+Incremental: a .note whose .md is newer than it is skipped, so scheduled runs
+are close to free when nothing has changed. Pass --force to rebuild everything.
+"""
+import os, subprocess, sys, tempfile, datetime
+
+ROOT = os.path.expanduser(
+    "~/Documents/ObsidianVaults/ObsidianVault/Supernote")
+TOOL = os.path.expanduser("~/.local/bin/supernote-tool")
+FORCE = "--force" in sys.argv
+for a in sys.argv[1:]:
+    if not a.startswith("--"):
+        ROOT = a
+
+def extract_text(note_path):
+    tmp = tempfile.mktemp(suffix=".txt")
+    try:
+        subprocess.run([TOOL, "convert", "-t", "txt", "-a", note_path, tmp],
+                       capture_output=True, timeout=300)
+        if os.path.exists(tmp):
+            with open(tmp, encoding="utf-8", errors="replace") as fh:
+                return fh.read().strip()
+    except Exception as e:
+        print(f"  ! extract failed: {e}", flush=True)
+    finally:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+    return ""
+
+def yaml_escape(s):
+    return '"' + s.replace('\\', '\\\\').replace('"', '\\"') + '"'
+
+if not os.path.isdir(ROOT):
+    print(f"[skip] {ROOT} does not exist"); sys.exit(0)
+if not os.path.exists(TOOL):
+    print(f"[error] supernote-tool not found at {TOOL}"); sys.exit(1)
+
+notes = sorted(os.path.join(dp, fn)
+               for dp, _, fns in os.walk(ROOT)
+               for fn in fns if fn.endswith(".note"))
+
+built = skipped = with_text = 0
+for note in notes:
+    stem = os.path.splitext(os.path.basename(note))[0]
+    md_path = os.path.join(os.path.dirname(note), stem + ".md")
+    rel = os.path.relpath(note, ROOT)
+
+    # incremental: regenerate only when the .note is newer than its .md
+    if not FORCE and os.path.exists(md_path) \
+       and os.path.getmtime(md_path) >= os.path.getmtime(note):
+        skipped += 1
+        continue
+
+    text = extract_text(note)
+    has = bool(text)
+    with_text += has
+    built += 1
+
+    body = [
+        "---", "source: supernote",
+        f"note_file: {yaml_escape(rel)}",
+        f"recognized: {'true' if has else 'false'}",
+        f"converted: {datetime.date.today().isoformat()}",
+        "---", "", f"# {stem}", "",
+        "> [!info] Handwritten source",
+        f"> Original: `{rel}` — open the `.note` in Obsidian to view it "
+        "rendered by the Supernote plugin.", "",
+        "## Recognized text", "",
+    ]
+    body.append(text if has else
+                "*No handwriting-recognition text is stored in this file.* The "
+                "pages exist only as strokes, so there is nothing to extract. "
+                "Enable real-time recognition on the device and re-open the "
+                "note there to generate it.")
+    body.append("")
+
+    with open(md_path, "w", encoding="utf-8") as fh:
+        fh.write("\n".join(body))
+    print(f"  built {rel} ({'text' if has else 'no text'})", flush=True)
+
+print(f"[done] {built} rebuilt ({with_text} with text), {skipped} unchanged, "
+      f"{len(notes)} total", flush=True)

@@ -33,6 +33,9 @@ return {
         "editors/vscodium",
         "editors/office",
         "editors/obsidian",
+        -- Supernote .note -> markdown pipeline + offline LanguageTool server.
+        -- Paired with editors/obsidian: it configures that vault's plugins.
+        "supernote",
         "git-config",
 
         -- Programming languages

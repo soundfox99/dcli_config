@@ -21,6 +21,15 @@ return {
         "cliphist",
         "brightnessctl",
         "playerctl",     -- media keys shell out to this
+        -- File manager for the Mod+F bind in dotfiles/niri/binds.kdl. Was only
+        -- present as a transitive dep of xdg-desktop-portal-gnome, so the bind
+        -- silently depended on a package nothing declared. Declared explicitly
+        -- here since this module owns the bind.
+        "nautilus",
+        -- gvfs alone has no MTP backend, so Nautilus cannot see MTP devices
+        -- (phones, e-readers, the Supernote). Dolphin is unaffected — it reaches
+        -- MTP through kio-extras, a separate stack.
+        "gvfs-mtp",
         -- fuzzel dropped: noctalia provides the launcher.
         "sway-audio-idle-inhibit-git",
         "swayidle",

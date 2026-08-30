@@ -1,0 +1,24 @@
+[Unit]
+Description=LanguageTool HTTP server (local, offline grammar checking)
+Documentation=https://dev.languagetool.org/http-server
+After=default.target
+
+[Service]
+Type=simple
+# /usr/bin/languagetool is a wrapper that dispatches on its arguments: --http
+# selects org.languagetool.server.HTTPServer. There is no languagetool-server
+# binary in the Arch package.
+#
+# The wrapper calls "$JAVA_HOME/bin/java" directly, so JAVA_HOME must be set or
+# it fails with "/bin/java: No such file or directory".
+Environment=JAVA_HOME=/usr/lib/jvm/default
+# Bind to loopback only — nothing on the network can reach this.
+ExecStart=/usr/bin/languagetool --http --port 8081 --allow-origin
+Restart=on-failure
+RestartSec=5
+Nice=5
+# Java is memory-hungry; cap it so it cannot crowd out the desktop.
+Environment=JAVA_TOOL_OPTIONS=-Xmx1g
+
+[Install]
+WantedBy=default.target
