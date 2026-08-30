@@ -1,7 +1,7 @@
 # supernote
 
 Two capabilities that share one hook, both aimed at the Obsidian vault in
-`~/Documents/ObsidianVaults/ObsidianVault`.
+`~/Documents/ObsidianVaults`.
 
 ## 1. `.note` → markdown
 
@@ -69,7 +69,7 @@ It requires `programming-languages/python` for `uv`, which both hosts enable.
 
 Plugin settings live in the vault, not here — `dcli` does not manage
 `.obsidian/`. Configured in
-`ObsidianVaults/ObsidianVault/.obsidian/plugins/*/data.json`:
+`ObsidianVaults/.obsidian/plugins/*/data.json`:
 
 | Plugin | Key setting |
 | --- | --- |
@@ -85,7 +85,7 @@ Plugin settings live in the vault, not here — `dcli` does not manage
 one MTP session:
 
 ```bash
-cd ~/Documents/ObsidianVaults/ObsidianVault/Supernote/Backup
+cd ~/Documents/ObsidianVaults/Supernote/Backup
 aft-mtp-cli -b "get -r /"
 ```
 

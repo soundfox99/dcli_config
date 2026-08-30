@@ -15,7 +15,7 @@ to free. Pass --force to rebuild everything.
 """
 import os, subprocess, sys, tempfile, datetime
 
-VAULT = os.path.expanduser("~/Documents/ObsidianVaults/ObsidianVault")
+VAULT = os.path.expanduser("~/Documents/ObsidianVaults")
 SRC = os.path.join(VAULT, "Supernote", "Backup")
 DST = os.path.join(VAULT, "Supernote", "Markdown")
 TOOL = os.path.expanduser("~/.local/bin/supernote-tool")
