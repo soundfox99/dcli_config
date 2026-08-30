@@ -32,10 +32,16 @@ rebuild costs ~23 s instead of re-rendering 294 images.
 
 Each note also gets **kebab-case tags derived from its device folder** and is
 listed in a generated `Supernote Index.md`. Both are deterministic — unlike
-title matching, a tag cannot produce a false link. Semantic cross-linking is
-left to the **Note Linker** plugin's *Scan Vault* command, which is what
-actually links existing notes; the Autolink plugin cannot, being an
-as-you-type `EditorSuggest` with no batch mode.
+title matching, a tag cannot produce a false link. The converter also emits a `## Related` section from **normalised** title
+matching — titles are filenames (`ModularRelayCard`) while the recognised text
+spells them out (`Modular Relay Card`), so both sides are folded to lowercase
+alphanumerics before comparing. Raw matching found 1 note; normalised found 2.
+
+That is the real ceiling, not a bug: scanning 99 qualifying titles against all
+55 texts yields exactly two genuine mentions, because handwritten notes do not
+cite each other by filename. The **Note Linker** plugin does the same kind of
+title match and will surface the same pair. Tags and the index, not title
+links, are what actually connect this corpus.
 
 **Recognition is not universal.** `FILE_RECOGN_TYPE: 1` means recognition is
 *enabled*, not that the device has *performed* it on every page. On the initial
