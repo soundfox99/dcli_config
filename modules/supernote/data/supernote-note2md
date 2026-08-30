@@ -6,35 +6,86 @@ mirroring the folder structure. The two trees are kept separate so no folder
 holds Foo.note and Foo.md side by side — that makes Obsidian's shortest-path
 link resolution ambiguous and clutters the file explorer.
 
+Each .md carries two layers:
+  1. The device's handwriting-recognition text, where it exists. Good on prose;
+     unusable on maths, because the recogniser emits one flat line of plain text
+     with no notion of superscripts, fractions or Greek (10^-19 comes out as
+     "/o-19"). That is a format limit, not a tuning problem.
+  2. A rendered PNG of every page, embedded inline. This is what makes an
+     equation-heavy note readable in Obsidian at all, and it is done fully
+     locally by supernote-tool — no OCR service, nothing leaves the machine.
+
 Supernote/Backup/ is the untouched device clone. Supernote/Markdown/ is entirely
-generated: it is rewritten on change and orphans are pruned, so do not hand-edit
-files there.
+generated: rewritten on change, orphans pruned, so do not hand-edit files there.
 
 Incremental: a .note whose .md is newer is skipped, so scheduled runs are close
 to free. Pass --force to rebuild everything.
 """
-import os, subprocess, sys, tempfile, datetime
+import os, re, subprocess, sys, tempfile, datetime, shutil, glob
 
 VAULT = os.path.expanduser("~/Documents/ObsidianVaults")
 SRC = os.path.join(VAULT, "Supernote", "Backup")
 DST = os.path.join(VAULT, "Supernote", "Markdown")
+ATT = os.path.join(DST, "attachments")
 TOOL = os.path.expanduser("~/.local/bin/supernote-tool")
 FORCE = "--force" in sys.argv
+
+def run_tool(args, timeout=900):
+    return subprocess.run([TOOL] + args, capture_output=True, timeout=timeout)
 
 def extract_text(note_path):
     tmp = tempfile.mktemp(suffix=".txt")
     try:
-        subprocess.run([TOOL, "convert", "-t", "txt", "-a", note_path, tmp],
-                       capture_output=True, timeout=300)
+        run_tool(["convert", "-t", "txt", "-a", note_path, tmp], timeout=300)
         if os.path.exists(tmp):
             with open(tmp, encoding="utf-8", errors="replace") as fh:
                 return fh.read().strip()
     except Exception as e:
-        print(f"  ! extract failed for {os.path.basename(note_path)}: {e}", flush=True)
+        print(f"  ! text extract failed for {os.path.basename(note_path)}: {e}", flush=True)
     finally:
         if os.path.exists(tmp):
             os.unlink(tmp)
     return ""
+
+def page_files(out_dir, stem):
+    return sorted(glob.glob(os.path.join(out_dir, f"{glob.escape(stem)}_*.png")),
+                  key=lambda p: int(p.rsplit("_", 1)[1].split(".")[0]))
+
+def render_pages(note_path, out_dir, stem):
+    """Render every page to PNG. Returns vault-relative paths, in page order.
+
+    Rendering is the expensive half (seconds per page), so existing pages newer
+    than the .note are reused. Only a changed or newly copied note re-renders.
+    """
+    os.makedirs(out_dir, exist_ok=True)
+    existing = page_files(out_dir, stem)
+    if existing and min(os.path.getmtime(f) for f in existing) >= os.path.getmtime(note_path):
+        return [os.path.relpath(f, VAULT) for f in existing]
+    for old in existing:
+        os.unlink(old)
+    try:
+        run_tool(["convert", "-t", "png", "-a", "-j", "4",
+                  note_path, os.path.join(out_dir, stem + ".png")])
+    except Exception as e:
+        print(f"  ! render failed for {stem}: {e}", flush=True)
+        return []
+    return [os.path.relpath(p, VAULT) for p in page_files(out_dir, stem)]
+
+def folder_tags(reldir):
+    """Kebab-case tags from the device folder path.
+
+    Deterministic grouping that never guesses: unlike title matching, a tag
+    cannot produce a false link. Complements Note Linker rather than replacing
+    it — tags group, links connect.
+    """
+    tags = ["supernote"]
+    for part in reldir.split(os.sep):
+        if not part:
+            continue
+        t = re.sub(r"[^a-z0-9]+", "-", part.lower()).strip("-")
+        if t and not t[0].isdigit() and t not in tags:
+            tags.append(t)
+    return tags
 
 def yaml_escape(s):
     return '"' + s.replace('\\', '\\\\').replace('"', '\\"') + '"'
@@ -48,68 +99,117 @@ notes = sorted(os.path.join(dp, fn)
                for dp, _, fns in os.walk(SRC)
                for fn in fns if fn.endswith(".note"))
 
-expected = set()
-built = skipped = with_text = 0
+expected_md, expected_png = set(), set()
+built = skipped = with_text = total_pages = 0
 
 for note in notes:
     rel = os.path.relpath(note, SRC)
+    reldir = os.path.dirname(rel)
+    stem = os.path.splitext(os.path.basename(rel))[0]
     md_path = os.path.join(DST, os.path.splitext(rel)[0] + ".md")
-    expected.add(os.path.realpath(md_path))
+    att_dir = os.path.join(ATT, reldir)
+    expected_md.add(os.path.realpath(md_path))
 
-    if not FORCE and os.path.exists(md_path) \
-       and os.path.getmtime(md_path) >= os.path.getmtime(note):
+    fresh = (not FORCE and os.path.exists(md_path)
+             and os.path.getmtime(md_path) >= os.path.getmtime(note))
+    if fresh:
         skipped += 1
+        for p in glob.glob(os.path.join(att_dir, f"{glob.escape(stem)}_*.png")):
+            expected_png.add(os.path.realpath(p))
         continue
 
     text = extract_text(note)
+    pages = render_pages(note, att_dir, stem)
+    for p in pages:
+        expected_png.add(os.path.realpath(os.path.join(VAULT, p)))
     has = bool(text)
     with_text += has
+    total_pages += len(pages)
     built += 1
-    stem = os.path.splitext(os.path.basename(rel))[0]
 
     body = [
         "---", "source: supernote",
         f"note_file: {yaml_escape(os.path.join('Supernote/Backup', rel))}",
         f"recognized: {'true' if has else 'false'}",
+        f"pages: {len(pages)}",
+        "tags: [" + ", ".join(folder_tags(reldir)) + "]",
         f"converted: {datetime.date.today().isoformat()}",
         "---", "", f"# {stem}", "",
         "> [!info] Handwritten source",
-        f"> Original: `Supernote/Backup/{rel}` — open the `.note` in Obsidian to "
-        "view it rendered by the Supernote plugin.", "",
+        f"> Original: `Supernote/Backup/{rel}` — the `.note` also opens directly "
+        "in Obsidian, rendered by the Supernote plugin.", "",
         "## Recognized text", "",
-        text if has else
-        "*No handwriting-recognition text is stored in this file.* The pages "
-        "exist only as strokes, so there is nothing to extract. Enable "
-        "real-time recognition on the device and re-open the note there.",
-        "",
     ]
+    if has:
+        body += [text, "",
+                 "> [!warning] Maths is unreliable",
+                 "> The device recogniser emits one flat line of plain text, so "
+                 "superscripts, fractions and Greek are mangled. Read equations "
+                 "from the page images below, not from the text above.", ""]
+    else:
+        body += ["*No handwriting-recognition text is stored in this file* — the "
+                 "pages exist only as strokes. The page images below are the "
+                 "full content.", ""]
+
+    body += ["## Pages", ""]
+    if pages:
+        for i, p in enumerate(pages):
+            body += [f"**Page {i + 1}**", "", f"![[{p}]]", ""]
+    else:
+        body += ["*No pages rendered.*", ""]
+
     os.makedirs(os.path.dirname(md_path), exist_ok=True)
     with open(md_path, "w", encoding="utf-8") as fh:
         fh.write("\n".join(body))
-    print(f"  built {rel} ({'text' if has else 'no text'})", flush=True)
+    print(f"  built {rel} ({'text' if has else 'no text'}, {len(pages)} pages)", flush=True)
 
-# prune .md whose .note is gone. Guarded on the frontmatter marker so nothing
-# that did not come from this script is ever removed.
+# prune generated files whose .note is gone
 pruned = 0
 for dp, _, fns in os.walk(DST):
     for fn in fns:
-        if not fn.endswith(".md"):
-            continue
         p = os.path.join(dp, fn)
-        if os.path.realpath(p) in expected:
-            continue
-        try:
-            with open(p, encoding="utf-8", errors="replace") as fh:
-                if "source: supernote" not in fh.read(200):
-                    continue
-        except OSError:
-            continue
-        os.unlink(p); pruned += 1
-        print(f"  pruned {os.path.relpath(p, DST)} (source .note gone)", flush=True)
+        rp = os.path.realpath(p)
+        if fn.endswith(".md") and rp not in expected_md:
+            try:
+                with open(p, encoding="utf-8", errors="replace") as fh:
+                    if "source: supernote" not in fh.read(200):
+                        continue
+            except OSError:
+                continue
+            os.unlink(p); pruned += 1
+        elif fn.endswith(".png") and dp.startswith(ATT) and rp not in expected_png:
+            os.unlink(p); pruned += 1
 
 for dp, dns, fns in os.walk(DST, topdown=False):
     if dp != DST and not dns and not fns:
         os.rmdir(dp)
 
-print(f"[done] {built} rebuilt ({with_text} with text), {skipped} unchanged, "
-      f"{pruned} pruned, {len(notes)} total", flush=True)
+# --- generated index -------------------------------------------------------
+# A map-of-content: guarantees every note is reachable in the graph without
+# guessing at relationships. Note Linker adds the semantic cross-links on top.
+index_path = os.path.join(DST, "Supernote Index.md")
+by_dir = {}
+for note in notes:
+    rel = os.path.relpath(note, SRC)
+    by_dir.setdefault(os.path.dirname(rel) or ".", []).append(
+        os.path.splitext(os.path.basename(rel))[0])
+
+lines = ["---", "source: supernote", "tags: [supernote, index]",
+         f"converted: {datetime.date.today().isoformat()}", "---", "",
+         "# Supernote Index", "",
+         f"{len(notes)} notes from the device, grouped as they are filed on it. "
+         "Generated — edits are overwritten.", ""]
+for d in sorted(by_dir):
+    lines += [f"## {d if d != '.' else 'Root'}", ""]
+    for stem in sorted(by_dir[d]):
+        target = os.path.join("Supernote/Markdown", d, stem) if d != "." \
+                 else os.path.join("Supernote/Markdown", stem)
+        lines.append(f"- [[{target}|{stem}]]")
+    lines.append("")
+with open(index_path, "w", encoding="utf-8") as fh:
+    fh.write("\n".join(lines))
+expected_md.add(os.path.realpath(index_path))
+print(f"  wrote index: {len(notes)} notes across {len(by_dir)} folders", flush=True)
+
+print(f"[done] {built} rebuilt ({with_text} with text, {total_pages} pages), "
+      f"{skipped} unchanged, {pruned} pruned, {len(notes)} total", flush=True)

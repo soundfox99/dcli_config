@@ -19,6 +19,24 @@ clutters the file explorer. `Supernote/Backup/` is the untouched device clone;
 `Supernote/Markdown/` is entirely generated, rewritten on change with orphans
 pruned, so it must not be hand-edited.
 
+Each `.md` carries two layers: the recognised text, and **a locally rendered
+PNG of every page embedded inline**. The images are what make an equation-heavy
+note readable at all — the device recogniser emits one flat line of plain text,
+so `10^-19` arrives as `/o-19` and `v` is read as a tick. That is a format
+limit, not a tuning problem, so text-bearing notes get a callout telling the
+reader to trust the images over the text for maths. Rendering is local
+(`supernote-tool`); no OCR service is involved.
+
+Pages are reused when they are newer than their `.note`, so a full `--force`
+rebuild costs ~23 s instead of re-rendering 294 images.
+
+Each note also gets **kebab-case tags derived from its device folder** and is
+listed in a generated `Supernote Index.md`. Both are deterministic — unlike
+title matching, a tag cannot produce a false link. Semantic cross-linking is
+left to the **Note Linker** plugin's *Scan Vault* command, which is what
+actually links existing notes; the Autolink plugin cannot, being an
+as-you-type `EditorSuggest` with no batch mode.
+
 **Recognition is not universal.** `FILE_RECOGN_TYPE: 1` means recognition is
 *enabled*, not that the device has *performed* it on every page. On the initial
 run, 42 of 55 files yielded text; the other 13 got a stub saying so rather than
