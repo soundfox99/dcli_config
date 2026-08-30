@@ -66,7 +66,19 @@ install -Dm755 "${MODULE_ROOT}/data/supernote-note2md" "${BIN_DIR}/supernote-not
 echo "  installed ${BIN_DIR}/supernote-note2md"
 
 # --- systemd user units -------------------------------------------------------
-# The unit files themselves arrive via dotfiles_sync; this only activates them.
+# Installed here rather than via dotfiles_sync: dcli symlinks whole directories,
+# so shipping these as dotfiles/systemd/ would make ~/.config/systemd a symlink
+# into this module — handing one module the entire user-unit namespace and
+# committing `systemctl --user enable` state (absolute-path .wants symlinks)
+# straight into git. Plain files, copied.
+install -Dm644 "${MODULE_ROOT}/data/systemd-user/supernote-note2md.service" \
+    "${HOME}/.config/systemd/user/supernote-note2md.service"
+install -Dm644 "${MODULE_ROOT}/data/systemd-user/supernote-note2md.timer" \
+    "${HOME}/.config/systemd/user/supernote-note2md.timer"
+install -Dm644 "${MODULE_ROOT}/data/systemd-user/languagetool.service" \
+    "${HOME}/.config/systemd/user/languagetool.service"
+echo "  installed 3 systemd user units"
+
 if ! user_bus_available; then
     echo "  no user session bus at ${XDG_RUNTIME_DIR}/bus — skipping unit activation."
     echo "  Run this once from a graphical/login session:"
@@ -86,7 +98,9 @@ fi
 
 # LanguageTool is only useful once the package landed. Enabling a unit whose
 # ExecStart is missing would just crashloop, so gate on the binary.
-if [ -x /usr/bin/languagetool-server ]; then
+# NB: the Arch package ships ONE wrapper, /usr/bin/languagetool, which selects
+# the HTTP server via --http. There is no languagetool-server binary.
+if [ -x /usr/bin/languagetool ]; then
     if systemctl --user enable --now languagetool.service 2>/dev/null; then
         echo "  enabled languagetool.service (http://localhost:8081)"
     else

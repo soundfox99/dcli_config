@@ -11,9 +11,13 @@ works — but Obsidian's **search, graph and Autolink cannot see inside a
 `.note`**. Everything handwritten is invisible to them.
 
 `supernotelib` extracts the device's own handwriting-recognition text.
-`supernote-note2md` writes a sibling `.md` per `.note` carrying that text plus
-frontmatter and a link back to the original, which gives search and Autolink
-something to work on. The `.note` files are never modified.
+`supernote-note2md` reads `.note` files from `SupernoteBackup/` and writes the
+corresponding `.md` into `SupernoteMarkdown/`, mirroring the folder structure.
+The two trees are kept separate so no folder holds `Foo.note` and `Foo.md` side
+by side — that makes Obsidian's shortest-path link resolution ambiguous and
+clutters the file explorer. `SupernoteBackup/` is the untouched device clone;
+`SupernoteMarkdown/` is entirely generated, rewritten on change with orphans
+pruned, so it must not be hand-edited.
 
 **Recognition is not universal.** `FILE_RECOGN_TYPE: 1` means recognition is
 *enabled*, not that the device has *performed* it on every page. On the initial
@@ -69,7 +73,7 @@ Plugin settings live in the vault, not here — `dcli` does not manage
 
 | Plugin | Key setting |
 | --- | --- |
-| `supernote` | `syncFolder: "Supernote"`; `directConnectIP` blank until the device's IP is filled in |
+| `supernote` | `syncFolder: "SupernoteBackup"`; `directConnectIP` blank until the device's IP is filled in |
 | `autolink` | `mode: "autonomous"`, `minWordLength: 4` |
 | `obsidian-languagetool-plugin` | `urlMode: "custom"`, `serverUrl: "http://localhost:8081"` |
 
@@ -81,7 +85,7 @@ Plugin settings live in the vault, not here — `dcli` does not manage
 one MTP session:
 
 ```bash
-cd ~/Documents/ObsidianVaults/ObsidianVault/Supernote
+cd ~/Documents/ObsidianVaults/ObsidianVault/SupernoteBackup
 aft-mtp-cli -b "get -r /"
 ```
 
@@ -91,6 +95,11 @@ a packaged tool is preferable to scripting `mtp-getfile` in a loop.
 MTP allows one claimant at a time, and a file manager's daemon (`kiod6` for
 Dolphin, `gvfsd-mtp` for Nautilus) holds the device even after its window
 closes. `fuser -v /dev/bus/usb/<bus>/<dev>` names the holder.
+
+## Ports
+
+LanguageTool binds `127.0.0.1:8081`. See `PORTS.md` at the repo root for the
+full local allocation table.
 
 ## Gotcha: systemctl --user inside a hook
 

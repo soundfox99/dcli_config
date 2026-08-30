@@ -1,23 +1,25 @@
 #!/usr/bin/env python3
 """Generate Obsidian-readable .md companions for Supernote .note files.
 
-Extracts the device's handwriting-recognition text via supernote-tool and writes
-a sibling .md. The .note stays put and stays viewable through the Supernote
-Obsidian plugin; this adds the searchable, linkable text layer that Obsidian's
-search, graph and Autolink can operate on.
+Reads .note files from SupernoteBackup/ and writes .md into SupernoteMarkdown/,
+mirroring the folder structure. The two trees are kept separate so no folder
+holds Foo.note and Foo.md side by side — that makes Obsidian's shortest-path
+link resolution ambiguous and clutters the file explorer.
 
-Incremental: a .note whose .md is newer than it is skipped, so scheduled runs
-are close to free when nothing has changed. Pass --force to rebuild everything.
+SupernoteBackup/ is the untouched device clone. SupernoteMarkdown/ is entirely
+generated: it is rewritten on change and orphans are pruned, so do not hand-edit
+files there.
+
+Incremental: a .note whose .md is newer is skipped, so scheduled runs are close
+to free. Pass --force to rebuild everything.
 """
 import os, subprocess, sys, tempfile, datetime
 
-ROOT = os.path.expanduser(
-    "~/Documents/ObsidianVaults/ObsidianVault/Supernote")
+VAULT = os.path.expanduser("~/Documents/ObsidianVaults/ObsidianVault")
+SRC = os.path.join(VAULT, "SupernoteBackup")
+DST = os.path.join(VAULT, "SupernoteMarkdown")
 TOOL = os.path.expanduser("~/.local/bin/supernote-tool")
 FORCE = "--force" in sys.argv
-for a in sys.argv[1:]:
-    if not a.startswith("--"):
-        ROOT = a
 
 def extract_text(note_path):
     tmp = tempfile.mktemp(suffix=".txt")
@@ -28,7 +30,7 @@ def extract_text(note_path):
             with open(tmp, encoding="utf-8", errors="replace") as fh:
                 return fh.read().strip()
     except Exception as e:
-        print(f"  ! extract failed: {e}", flush=True)
+        print(f"  ! extract failed for {os.path.basename(note_path)}: {e}", flush=True)
     finally:
         if os.path.exists(tmp):
             os.unlink(tmp)
@@ -37,22 +39,23 @@ def extract_text(note_path):
 def yaml_escape(s):
     return '"' + s.replace('\\', '\\\\').replace('"', '\\"') + '"'
 
-if not os.path.isdir(ROOT):
-    print(f"[skip] {ROOT} does not exist"); sys.exit(0)
+if not os.path.isdir(SRC):
+    print(f"[skip] {SRC} does not exist"); sys.exit(0)
 if not os.path.exists(TOOL):
     print(f"[error] supernote-tool not found at {TOOL}"); sys.exit(1)
 
 notes = sorted(os.path.join(dp, fn)
-               for dp, _, fns in os.walk(ROOT)
+               for dp, _, fns in os.walk(SRC)
                for fn in fns if fn.endswith(".note"))
 
+expected = set()
 built = skipped = with_text = 0
-for note in notes:
-    stem = os.path.splitext(os.path.basename(note))[0]
-    md_path = os.path.join(os.path.dirname(note), stem + ".md")
-    rel = os.path.relpath(note, ROOT)
 
-    # incremental: regenerate only when the .note is newer than its .md
+for note in notes:
+    rel = os.path.relpath(note, SRC)
+    md_path = os.path.join(DST, os.path.splitext(rel)[0] + ".md")
+    expected.add(os.path.realpath(md_path))
+
     if not FORCE and os.path.exists(md_path) \
        and os.path.getmtime(md_path) >= os.path.getmtime(note):
         skipped += 1
@@ -62,28 +65,51 @@ for note in notes:
     has = bool(text)
     with_text += has
     built += 1
+    stem = os.path.splitext(os.path.basename(rel))[0]
 
     body = [
         "---", "source: supernote",
-        f"note_file: {yaml_escape(rel)}",
+        f"note_file: {yaml_escape(os.path.join('SupernoteBackup', rel))}",
         f"recognized: {'true' if has else 'false'}",
         f"converted: {datetime.date.today().isoformat()}",
         "---", "", f"# {stem}", "",
         "> [!info] Handwritten source",
-        f"> Original: `{rel}` — open the `.note` in Obsidian to view it "
-        "rendered by the Supernote plugin.", "",
+        f"> Original: `SupernoteBackup/{rel}` — open the `.note` in Obsidian to "
+        "view it rendered by the Supernote plugin.", "",
         "## Recognized text", "",
+        text if has else
+        "*No handwriting-recognition text is stored in this file.* The pages "
+        "exist only as strokes, so there is nothing to extract. Enable "
+        "real-time recognition on the device and re-open the note there.",
+        "",
     ]
-    body.append(text if has else
-                "*No handwriting-recognition text is stored in this file.* The "
-                "pages exist only as strokes, so there is nothing to extract. "
-                "Enable real-time recognition on the device and re-open the "
-                "note there to generate it.")
-    body.append("")
-
+    os.makedirs(os.path.dirname(md_path), exist_ok=True)
     with open(md_path, "w", encoding="utf-8") as fh:
         fh.write("\n".join(body))
     print(f"  built {rel} ({'text' if has else 'no text'})", flush=True)
 
+# prune .md whose .note is gone. Guarded on the frontmatter marker so nothing
+# that did not come from this script is ever removed.
+pruned = 0
+for dp, _, fns in os.walk(DST):
+    for fn in fns:
+        if not fn.endswith(".md"):
+            continue
+        p = os.path.join(dp, fn)
+        if os.path.realpath(p) in expected:
+            continue
+        try:
+            with open(p, encoding="utf-8", errors="replace") as fh:
+                if "source: supernote" not in fh.read(200):
+                    continue
+        except OSError:
+            continue
+        os.unlink(p); pruned += 1
+        print(f"  pruned {os.path.relpath(p, DST)} (source .note gone)", flush=True)
+
+for dp, dns, fns in os.walk(DST, topdown=False):
+    if dp != DST and not dns and not fns:
+        os.rmdir(dp)
+
 print(f"[done] {built} rebuilt ({with_text} with text), {skipped} unchanged, "
-      f"{len(notes)} total", flush=True)
+      f"{pruned} pruned, {len(notes)} total", flush=True)

@@ -14,7 +14,6 @@
 --      packaged server pulls in java-runtime-headless (~390 MB installed).
 return {
     description = "Supernote .note -> markdown pipeline and offline LanguageTool server",
-    dotfiles_sync = true,
     packages = {
         -- Rule-based grammar/spell server. Not an LLM; runs on loopback only.
         "languagetool",
@@ -22,8 +21,12 @@ return {
         -- libmtp's own CLI can only fetch one file at a time by numeric ID.
         "android-file-transfer",
     },
+    -- No dotfiles_sync: dcli symlinks whole directories, and ~/.config/systemd
+    -- is a shared namespace no single module should own. The hook copies the
+    -- units in as plain files instead.
+    --
     -- Installs supernotelib into a uv-managed venv, drops the converter into
-    -- ~/.local/bin, and enables the user units. Idempotent.
+    -- ~/.local/bin, installs and enables the user units. Idempotent.
     post_install_hook = "scripts/install-supernote-tooling.sh",
     hook_behavior = "always",
     run_hooks_as_user = true,
