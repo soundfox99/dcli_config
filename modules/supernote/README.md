@@ -32,16 +32,30 @@ rebuild costs ~23 s instead of re-rendering 294 images.
 
 Each note also gets **kebab-case tags derived from its device folder** and is
 listed in a generated `Supernote Index.md`. Both are deterministic — unlike
-title matching, a tag cannot produce a false link. The converter also emits a `## Related` section from **normalised** title
-matching — titles are filenames (`ModularRelayCard`) while the recognised text
-spells them out (`Modular Relay Card`), so both sides are folded to lowercase
-alphanumerics before comparing. Raw matching found 1 note; normalised found 2.
+title matching, a tag cannot produce a false link. The converter also emits a `## Related` section with two kinds of link:
 
-That is the real ceiling, not a bug: scanning 99 qualifying titles against all
-55 texts yields exactly two genuine mentions, because handwritten notes do not
-cite each other by filename. The **Note Linker** plugin does the same kind of
-title match and will surface the same pair. Tags and the index, not title
-links, are what actually connect this corpus.
+* **mentions** — another note's title appears in this note's text. Both sides are
+  normalised to lowercase alphanumerics first, since titles are filenames
+  (`ModularRelayCard`) while the text spells them out (`Modular Relay Card`).
+* **shared vocabulary** — TF-IDF over every `.md` in the vault, so a Supernote
+  lecture links to a `Work/NAI/` task when they share distinctive terms. Cross
+  folder by design; that is the point of a vault.
+
+Title matching alone reaches 2 links across the whole corpus — handwritten notes
+do not cite each other by filename. Keyword similarity reaches 49 across 17
+notes. Three thresholds keep that from becoming noise, all set by measuring the
+corpus rather than guessing:
+
+| Guard | Value | Why |
+| --- | --- | --- |
+| `df >= 2` | idf floor | OCR garbage (`deoripticn`) appears once and would otherwise score as maximally distinctive |
+| `df <= 30%` | idf ceiling | terms common enough to connect everything to everything |
+| `MIN_DOC_TERMS = 15` | per note | a thin note gives a tiny denominator and a spurious score — two notes with *no* recognised text scored 1.74 against each other |
+| `MIN_SCORE = 0.50` | per pair | measured noise sits at 0.27–0.46; without a floor every note got 5 links whether good ones existed or not, giving a hiking list five Leetcode links |
+
+The **Note Linker** plugin does title matching only, so it surfaces the same two
+mentions and none of the keyword links. The Autolink plugin cannot do either,
+being an as-you-type `EditorSuggest` with no batch mode.
 
 **Recognition is not universal.** `FILE_RECOGN_TYPE: 1` means recognition is
 *enabled*, not that the device has *performed* it on every page. On the initial

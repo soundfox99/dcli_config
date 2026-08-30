@@ -2,26 +2,29 @@
 """Generate Obsidian-readable .md companions for Supernote .note files.
 
 Reads .note files from Supernote/Backup/ and writes .md into Supernote/Markdown/,
-mirroring the folder structure. The two trees are kept separate so no folder
-holds Foo.note and Foo.md side by side — that makes Obsidian's shortest-path
-link resolution ambiguous and clutters the file explorer.
+mirroring the folder structure. The two trees stay separate so no folder holds
+Foo.note and Foo.md side by side, which would make Obsidian's shortest-path link
+resolution ambiguous.
 
-Each .md carries two layers:
-  1. The device's handwriting-recognition text, where it exists. Good on prose;
-     unusable on maths, because the recogniser emits one flat line of plain text
-     with no notion of superscripts, fractions or Greek (10^-19 comes out as
-     "/o-19"). That is a format limit, not a tuning problem.
-  2. A rendered PNG of every page, embedded inline. This is what makes an
-     equation-heavy note readable in Obsidian at all, and it is done fully
-     locally by supernote-tool — no OCR service, nothing leaves the machine.
+Each generated .md carries:
+  * the device's handwriting-recognition text, where it exists
+  * every page rendered to PNG and embedded inline — done locally by
+    supernote-tool, no OCR service. This is what makes an equation-heavy note
+    readable, since the recogniser emits one flat line of plain text and mangles
+    superscripts, fractions and Greek (10^-19 arrives as "/o-19")
+  * kebab-case tags from the device folder path
+  * a Related section: title mentions plus keyword-similar notes from anywhere
+    in the vault
 
 Supernote/Backup/ is the untouched device clone. Supernote/Markdown/ is entirely
-generated: rewritten on change, orphans pruned, so do not hand-edit files there.
+generated — rewritten on change, orphans pruned — so do not hand-edit it.
 
-Incremental: a .note whose .md is newer is skipped, so scheduled runs are close
-to free. Pass --force to rebuild everything.
+Incremental: a .note whose .md is newer is skipped, and rendered pages newer
+than their .note are reused, so scheduled runs are close to free.
+Pass --force to rebuild everything.
 """
-import os, re, subprocess, sys, tempfile, datetime, shutil, glob
+import os, re, sys, glob, math, shutil, datetime, tempfile, subprocess
+from collections import Counter
 
 VAULT = os.path.expanduser("~/Documents/ObsidianVaults")
 SRC = os.path.join(VAULT, "Supernote", "Backup")
@@ -30,8 +33,31 @@ ATT = os.path.join(DST, "attachments")
 TOOL = os.path.expanduser("~/.local/bin/supernote-tool")
 FORCE = "--force" in sys.argv
 
+INDEX_NAME = "Supernote Index.md"
+MAX_RELATED = 5          # keyword links per note; more becomes noise
+MIN_SHARED = 3           # need at least this many distinctive terms in common
+MIN_DOC_TERMS = 15       # a note this thin cannot be judged similar to anything
+MIN_SCORE = 0.50         # empirical floor: measured noise sits at 0.27-0.46
+SKIP_DIRS = {".obsidian", "attachments", ".git", ".trash"}
+
+STOPWORDS = set("""
+about above after again against all also and any are because been before being
+below between both but can cant come could did didnt does doesnt doing dont down
+during each else even every few for from further had has have having here how
+however into its itself just like made make many more most much must need needs
+not now off once only other our out over own same should since some such than
+that the their them then there these they this those through too under until
+upon use used using very was way well were what when where which while who why
+will with within without would you your notes note page pages test tests set
+get got new one two three first next last time work working
+""".split())
+
+
+# ── helpers ──────────────────────────────────────────────────────────────────
+
 def run_tool(args, timeout=900):
     return subprocess.run([TOOL] + args, capture_output=True, timeout=timeout)
+
 
 def extract_text(note_path):
     tmp = tempfile.mktemp(suffix=".txt")
@@ -47,16 +73,15 @@ def extract_text(note_path):
             os.unlink(tmp)
     return ""
 
+
 def page_files(out_dir, stem):
     return sorted(glob.glob(os.path.join(out_dir, f"{glob.escape(stem)}_*.png")),
                   key=lambda p: int(p.rsplit("_", 1)[1].split(".")[0]))
 
-def render_pages(note_path, out_dir, stem):
-    """Render every page to PNG. Returns vault-relative paths, in page order.
 
-    Rendering is the expensive half (seconds per page), so existing pages newer
-    than the .note are reused. Only a changed or newly copied note re-renders.
-    """
+def render_pages(note_path, out_dir, stem):
+    """Render each page to PNG. Existing pages newer than the .note are reused —
+    rendering is seconds per page, so this keeps --force cheap."""
     os.makedirs(out_dir, exist_ok=True)
     existing = page_files(out_dir, stem)
     if existing and min(os.path.getmtime(f) for f in existing) >= os.path.getmtime(note_path):
@@ -71,80 +96,131 @@ def render_pages(note_path, out_dir, stem):
         return []
     return [os.path.relpath(p, VAULT) for p in page_files(out_dir, stem)]
 
-def folder_tags(reldir):
-    """Kebab-case tags from the device folder path.
 
-    Deterministic grouping that never guesses: unlike title matching, a tag
-    cannot produce a false link. Complements Note Linker rather than replacing
-    it — tags group, links connect.
-    """
+def folder_tags(reldir):
     tags = ["supernote"]
     for part in reldir.split(os.sep):
-        if not part:
-            continue
         t = re.sub(r"[^a-z0-9]+", "-", part.lower()).strip("-")
         if t and not t[0].isdigit() and t not in tags:
             tags.append(t)
     return tags
 
-def linkable_titles():
-    """Vault note titles safe to auto-link, mapped title -> vault-relative path.
-
-    Auto-linking on title match is only useful if it does not produce noise, so
-    a title qualifies when it is multi-word, or >=10 characters, or contains a
-    digit. That keeps "ModularRelayCard", "1.TwoSum" and "12-19-25 Relay Card
-    Not Flashing", and drops "Ideas", "Journal" and "Anxiety" — common English
-    words that would match almost any page of prose.
-    """
-    out = {}
-    for dp, dns, fns in os.walk(VAULT):
-        dns[:] = [d for d in dns if d not in (".obsidian", "attachments", ".git")]
-        for fn in fns:
-            if not fn.endswith(".md"):
-                continue
-            title = fn[:-3]
-            if title == "Supernote Index":
-                continue
-            multiword = len(title.split()) > 1
-            if not (multiword or len(title) >= 10 or any(c.isdigit() for c in title)):
-                continue
-            rel = os.path.relpath(os.path.join(dp, fn), VAULT)
-            out.setdefault(title, os.path.splitext(rel)[0])
-    return out
-
-def _norm(s):
-    """Fold to lowercase alphanumerics only.
-
-    Titles are filenames ("ModularRelayCard", "NextGenRelayCardFirmware") while
-    the recognised text spells them out ("Modular Relay Card"). Comparing raw
-    strings finds almost nothing; comparing normalised forms finds the real
-    mentions. Spaces are dropped rather than kept so word splits stop mattering.
-    """
-    return re.sub(r"[^a-z0-9]+", "", s.lower())
-
-def related_links(text, self_title, titles):
-    """Titles mentioned in `text`. Normalised substring match."""
-    if not text:
-        return []
-    hay = _norm(text)
-    if not hay:
-        return []
-    self_n = _norm(self_title)
-    hits = []
-    for title in titles:
-        n = _norm(title)
-        # short normalised forms match too easily once separators are gone
-        if len(n) < 10 or n == self_n:
-            continue
-        if n in hay:
-            hits.append(title)
-    # drop titles wholly contained in a longer match, keeping the specific one
-    keep = [t for t in hits
-            if not any(t != o and _norm(t) in _norm(o) for o in hits)]
-    return sorted(keep)
 
 def yaml_escape(s):
     return '"' + s.replace('\\', '\\\\').replace('"', '\\"') + '"'
+
+
+def norm(s):
+    """Fold to lowercase alphanumerics. Titles are filenames
+    ("ModularRelayCard") while text spells them out ("Modular Relay Card")."""
+    return re.sub(r"[^a-z0-9]+", "", s.lower())
+
+
+def tokens(text):
+    return [w for w in re.findall(r"[a-z][a-z0-9]{3,}", text.lower())
+            if w not in STOPWORDS]
+
+
+# ── corpus ───────────────────────────────────────────────────────────────────
+
+def read_body(path):
+    """Note text for similarity. For generated notes, only the recognised text —
+    the boilerplate and page embeds would otherwise dominate every comparison."""
+    try:
+        s = open(path, encoding="utf-8", errors="replace").read()
+    except OSError:
+        return ""
+    i = s.find("## Recognized text")
+    if i >= 0:
+        j = s.find("## Related", i)
+        k = s.find("## Pages", i)
+        end = min(x for x in (j, k, len(s)) if x > 0)
+        return s[i + 18:end]
+    return s
+
+
+def build_corpus():
+    """Every vault note: title -> (vault-relative link target, token counter).
+
+    Cross-folder by design — a Supernote lecture linking to a Work note is the
+    point of a vault, not a leak between silos."""
+    docs = {}
+    for dp, dns, fns in os.walk(VAULT):
+        dns[:] = [d for d in dns if d not in SKIP_DIRS]
+        for fn in fns:
+            if not fn.endswith(".md") or fn == INDEX_NAME:
+                continue
+            path = os.path.join(dp, fn)
+            title = fn[:-3]
+            rel = os.path.splitext(os.path.relpath(path, VAULT))[0]
+            raw = read_body(path)
+            docs[title] = (rel, Counter(tokens(raw)), norm(raw))
+    return docs
+
+
+def build_idf(docs):
+    """Inverse document frequency, with the tails cut off.
+
+    df >= 2 drops OCR garbage: a mangled token like "deoripticn" appears once,
+    and raw idf would score it as maximally distinctive. df <= 30% drops terms
+    so common they connect everything to everything."""
+    n = max(len(docs), 1)
+    df = Counter()
+    for _, counts, _ in docs.values():
+        df.update(counts.keys())
+    hi = max(2, int(0.3 * n))
+    return {t: math.log(n / c) for t, c in df.items() if 2 <= c <= hi}
+
+
+def related_for(title, docs, idf):
+    """Title mentions plus keyword-similar notes, as (target, label, why)."""
+    rel_self, counts_self, hay = docs[title]
+    self_n = norm(title)
+
+    out, seen = [], {title}
+
+    # 1. explicit mentions — someone wrote the other note's name
+    for other, (rel, _, _) in docs.items():
+        if other in seen:
+            continue
+        n = norm(other)
+        if len(n) >= 10 and n != self_n and n in hay:
+            out.append((rel, other, "mentioned"))
+            seen.add(other)
+
+    # 2. shared distinctive vocabulary
+    #
+    # Two guards, both from measuring the actual corpus. A short document
+    # produces a tiny denominator and so a spuriously high similarity — two
+    # notes with no recognised text at all scored 1.74 against each other — so
+    # thin notes are excluded outright rather than ranked. And every note used
+    # to receive MAX_RELATED links whether or not good ones existed, which gave
+    # a hiking list five links to Leetcode problems; MIN_SCORE cuts that band.
+    mine = {t: idf[t] for t in counts_self if t in idf}
+    if len(mine) >= MIN_DOC_TERMS:
+        scored = []
+        for other, (rel, counts, _) in docs.items():
+            if other in seen:
+                continue
+            theirs = {t for t in counts if t in idf}
+            if len(theirs) < MIN_DOC_TERMS:
+                continue
+            shared = [t for t in theirs if t in mine]
+            if len(shared) < MIN_SHARED:
+                continue
+            weight = sum(mine[t] for t in shared)
+            score = weight / math.sqrt(len(mine) * len(theirs))
+            if score < MIN_SCORE:
+                continue
+            scored.append((score, weight, rel, other, shared))
+        scored.sort(reverse=True)
+        for _, _, rel, other, shared in scored[:MAX_RELATED]:
+            terms = ", ".join(sorted(shared, key=lambda t: -mine[t])[:4])
+            out.append((rel, other, f"shares {terms}"))
+    return out
+
+
+# ── main ─────────────────────────────────────────────────────────────────────
 
 if not os.path.isdir(SRC):
     print(f"[skip] {SRC} does not exist"); sys.exit(0)
@@ -155,11 +231,10 @@ notes = sorted(os.path.join(dp, fn)
                for dp, _, fns in os.walk(SRC)
                for fn in fns if fn.endswith(".note"))
 
-TITLES = linkable_titles()
-print(f"[links] {len(TITLES)} linkable titles in vault", flush=True)
-
-expected_md, expected_png = set(), set()
+# Pass 1 — text and pages, so the corpus sees current content.
+meta = {}
 built = skipped = with_text = total_pages = 0
+expected_md, expected_png = set(), set()
 
 for note in notes:
     rel = os.path.relpath(note, SRC)
@@ -173,7 +248,7 @@ for note in notes:
              and os.path.getmtime(md_path) >= os.path.getmtime(note))
     if fresh:
         skipped += 1
-        for p in glob.glob(os.path.join(att_dir, f"{glob.escape(stem)}_*.png")):
+        for p in page_files(att_dir, stem):
             expected_png.add(os.path.realpath(p))
         continue
 
@@ -181,26 +256,39 @@ for note in notes:
     pages = render_pages(note, att_dir, stem)
     for p in pages:
         expected_png.add(os.path.realpath(os.path.join(VAULT, p)))
-    has = bool(text)
-    with_text += has
+    meta[stem] = dict(rel=rel, reldir=reldir, md_path=md_path,
+                      text=text, pages=pages)
+    with_text += bool(text)
     total_pages += len(pages)
     built += 1
+    print(f"  built {rel} ({'text' if text else 'no text'}, {len(pages)} pages)", flush=True)
 
+# Pass 2 — corpus over the whole vault, then write with Related sections.
+docs = build_corpus()
+for stem, m in meta.items():                      # ensure fresh text is used
+    rel_link = os.path.splitext(os.path.relpath(m["md_path"], VAULT))[0]
+    docs[stem] = (rel_link, Counter(tokens(m["text"])), norm(m["text"]))
+idf = build_idf(docs)
+print(f"[links] corpus {len(docs)} notes, {len(idf)} distinctive terms", flush=True)
+
+linked = 0
+for stem, m in meta.items():
+    has = bool(m["text"])
     body = [
         "---", "source: supernote",
-        f"note_file: {yaml_escape(os.path.join('Supernote/Backup', rel))}",
+        f"note_file: {yaml_escape(os.path.join('Supernote/Backup', m['rel']))}",
         f"recognized: {'true' if has else 'false'}",
-        f"pages: {len(pages)}",
-        "tags: [" + ", ".join(folder_tags(reldir)) + "]",
+        f"pages: {len(m['pages'])}",
+        "tags: [" + ", ".join(folder_tags(m["reldir"])) + "]",
         f"converted: {datetime.date.today().isoformat()}",
         "---", "", f"# {stem}", "",
         "> [!info] Handwritten source",
-        f"> Original: `Supernote/Backup/{rel}` — the `.note` also opens directly "
-        "in Obsidian, rendered by the Supernote plugin.", "",
+        f"> Original: `Supernote/Backup/{m['rel']}` — the `.note` also opens "
+        "directly in Obsidian, rendered by the Supernote plugin.", "",
         "## Recognized text", "",
     ]
     if has:
-        body += [text, "",
+        body += [m["text"], "",
                  "> [!warning] Maths is unreliable",
                  "> The device recogniser emits one flat line of plain text, so "
                  "superscripts, fractions and Greek are mangled. Read equations "
@@ -210,31 +298,30 @@ for note in notes:
                  "pages exist only as strokes. The page images below are the "
                  "full content.", ""]
 
-    rel_hits = related_links(text, stem, TITLES)
-    if rel_hits:
+    rels = related_for(stem, docs, idf) if stem in docs else []
+    if rels:
+        linked += 1
         body += ["## Related", "",
-                 "Notes mentioned in the recognised text above. Generated by "
-                 "title match — the recognised text carries OCR errors, so this "
-                 "finds real mentions but will not find all of them.", ""]
-        body += [f"- [[{TITLES[t]}|{t}]]" for t in rel_hits]
+                 "Generated: notes naming this one, and notes sharing "
+                 "distinctive vocabulary with it. The recognised text carries "
+                 "OCR errors, so this finds real connections but not all of "
+                 "them.", ""]
+        body += [f"- [[{t}|{label}]] — *{why}*" for t, label, why in rels]
         body += [""]
 
     body += ["## Pages", ""]
-    if pages:
-        for i, p in enumerate(pages):
+    if m["pages"]:
+        for i, p in enumerate(m["pages"]):
             body += [f"**Page {i + 1}**", "", f"![[{p}]]", ""]
     else:
         body += ["*No pages rendered.*", ""]
 
-    os.makedirs(os.path.dirname(md_path), exist_ok=True)
-    with open(md_path, "w", encoding="utf-8") as fh:
+    os.makedirs(os.path.dirname(m["md_path"]), exist_ok=True)
+    with open(m["md_path"], "w", encoding="utf-8") as fh:
         fh.write("\n".join(body))
-    print(f"  built {rel} ({'text' if has else 'no text'}, {len(pages)} pages)", flush=True)
 
-# --- generated index -------------------------------------------------------
-# A map-of-content: guarantees every note is reachable in the graph without
-# guessing at relationships. Note Linker adds the semantic cross-links on top.
-index_path = os.path.join(DST, "Supernote Index.md")
+# Index — a map of content, so nothing is orphaned regardless of link yield.
+index_path = os.path.join(DST, INDEX_NAME)
 by_dir = {}
 for note in notes:
     rel = os.path.relpath(note, SRC)
@@ -248,17 +335,16 @@ lines = ["---", "source: supernote", "tags: [supernote, index]",
          "Generated — edits are overwritten.", ""]
 for d in sorted(by_dir):
     lines += [f"## {d if d != '.' else 'Root'}", ""]
-    for stem in sorted(by_dir[d]):
-        target = os.path.join("Supernote/Markdown", d, stem) if d != "." \
-                 else os.path.join("Supernote/Markdown", stem)
-        lines.append(f"- [[{target}|{stem}]]")
+    for st in sorted(by_dir[d]):
+        target = os.path.join("Supernote/Markdown", d, st) if d != "." \
+                 else os.path.join("Supernote/Markdown", st)
+        lines.append(f"- [[{target}|{st}]]")
     lines.append("")
-with open(index_path, "w", encoding="utf-8") as fh:
-    fh.write("\n".join(lines))
+open(index_path, "w", encoding="utf-8").write("\n".join(lines))
 expected_md.add(os.path.realpath(index_path))
 print(f"  wrote index: {len(notes)} notes across {len(by_dir)} folders", flush=True)
 
-# prune generated files whose .note is gone
+# Prune generated files whose .note is gone.
 pruned = 0
 for dp, _, fns in os.walk(DST):
     for fn in fns:
@@ -266,9 +352,9 @@ for dp, _, fns in os.walk(DST):
         rp = os.path.realpath(p)
         if fn.endswith(".md") and rp not in expected_md:
             try:
-                with open(p, encoding="utf-8", errors="replace") as fh:
-                    if "source: supernote" not in fh.read(200):
-                        continue
+                if "source: supernote" not in open(p, encoding="utf-8",
+                                                   errors="replace").read(200):
+                    continue
             except OSError:
                 continue
             os.unlink(p); pruned += 1
@@ -279,5 +365,6 @@ for dp, dns, fns in os.walk(DST, topdown=False):
     if dp != DST and not dns and not fns:
         os.rmdir(dp)
 
-print(f"[done] {built} rebuilt ({with_text} with text, {total_pages} pages), "
-      f"{skipped} unchanged, {pruned} pruned, {len(notes)} total", flush=True)
+print(f"[done] {built} rebuilt ({with_text} with text, {total_pages} pages, "
+      f"{linked} linked), {skipped} unchanged, {pruned} pruned, "
+      f"{len(notes)} total", flush=True)
