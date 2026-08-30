@@ -170,6 +170,10 @@ return {
     -- Enable [multilib] in /etc/pacman.conf if missing, so subsequent module
     -- installs can pull lib32-* GPU/userland packages on the same sync.
     pre_install_hook = "scripts/enable-multilib.sh",
+    -- Chromium skips VA-API on nvidia-drm render nodes; this overrides its
+    -- desktop entry to lift that. No-op (and cleans up) on non-NVIDIA hosts.
+    -- Previously rode along with the browser extension policies, which are gone.
+    post_install_hook = "scripts/chromium-nvidia-vaapi.sh",
     hook_behavior = "always",
     run_hooks_as_user = false,
 }

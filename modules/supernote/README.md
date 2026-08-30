@@ -11,12 +11,12 @@ works — but Obsidian's **search, graph and Autolink cannot see inside a
 `.note`**. Everything handwritten is invisible to them.
 
 `supernotelib` extracts the device's own handwriting-recognition text.
-`supernote-note2md` reads `.note` files from `SupernoteBackup/` and writes the
-corresponding `.md` into `SupernoteMarkdown/`, mirroring the folder structure.
+`supernote-note2md` reads `.note` files from `Supernote/Backup/` and writes the
+corresponding `.md` into `Supernote/Markdown/`, mirroring the folder structure.
 The two trees are kept separate so no folder holds `Foo.note` and `Foo.md` side
 by side — that makes Obsidian's shortest-path link resolution ambiguous and
-clutters the file explorer. `SupernoteBackup/` is the untouched device clone;
-`SupernoteMarkdown/` is entirely generated, rewritten on change with orphans
+clutters the file explorer. `Supernote/Backup/` is the untouched device clone;
+`Supernote/Markdown/` is entirely generated, rewritten on change with orphans
 pruned, so it must not be hand-edited.
 
 **Recognition is not universal.** `FILE_RECOGN_TYPE: 1` means recognition is
@@ -73,7 +73,7 @@ Plugin settings live in the vault, not here — `dcli` does not manage
 
 | Plugin | Key setting |
 | --- | --- |
-| `supernote` | `syncFolder: "SupernoteBackup"`; `directConnectIP` blank until the device's IP is filled in |
+| `supernote` | `syncFolder: "Supernote/Backup"`; `directConnectIP` blank until the device's IP is filled in |
 | `autolink` | `mode: "autonomous"`, `minWordLength: 4` |
 | `obsidian-languagetool-plugin` | `urlMode: "custom"`, `serverUrl: "http://localhost:8081"` |
 
@@ -85,7 +85,7 @@ Plugin settings live in the vault, not here — `dcli` does not manage
 one MTP session:
 
 ```bash
-cd ~/Documents/ObsidianVaults/ObsidianVault/SupernoteBackup
+cd ~/Documents/ObsidianVaults/ObsidianVault/Supernote/Backup
 aft-mtp-cli -b "get -r /"
 ```
 

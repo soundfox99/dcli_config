@@ -1,11 +1,12 @@
 return {
-    description = "Web browsers with extension policies deployed for first-launch auto-install",
+    description = "Web browsers (firefox, chromium, brave)",
+    -- Extension auto-install policies and bookmark sync were removed: managed
+    -- by hand now. The NVIDIA VA-API desktop-entry override that used to ride
+    -- along with the policy hook moved to modules/hardware.lua, where
+    -- GPU-conditional behaviour belongs.
     packages = {
         "firefox",
         "chromium",
         "brave-bin",
     },
-    post_install_hook = "scripts/install-browser-policies.sh",
-    hook_behavior = "always",
-    run_hooks_as_user = false,
 }

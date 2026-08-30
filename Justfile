@@ -43,7 +43,7 @@ self-update:
 
 # ─── Snapshot back to repo + commit + push ─────────────────────────────────
 
-# Snapshot system state (bookmarks, extensions) back into data files
+# Snapshot system state (VSCodium extensions) back into data files
 snapshot:
     ./scripts/snapshot-system-state.sh
 
@@ -66,16 +66,6 @@ theme name="":
 # Convenience: jump straight to a named theme
 mocha:        (theme "mocha")
 tokyonight:   (theme "tokyonight")
-
-# ─── Browser bookmark import (Chromium / Brave) ────────────────────────────
-
-# Auto-import (safe: only writes if target profile is empty)
-import-bookmarks:
-    ./modules/browsers/scripts/import-browser-bookmarks.sh
-
-# Force overwrite browser bookmarks with what's in the repo
-import-bookmarks-force:
-    ./modules/browsers/scripts/import-browser-bookmarks.sh --force
 
 # ─── git-crypt ─────────────────────────────────────────────────────────────
 

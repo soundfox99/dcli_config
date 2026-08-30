@@ -1,6 +1,6 @@
 # arch-config
 
-Declarative Arch Linux setup managed by [dcli](https://github.com/theblackdon/dcli). Modules are Lua; hardware-conditional packages live in `modules/hardware.lua`; browser bookmarks are encrypted with git-crypt.
+Declarative Arch Linux setup managed by [dcli](https://github.com/theblackdon/dcli). Modules are Lua; hardware-conditional packages live in `modules/hardware.lua`.
 
 ## Fresh-install bootstrap
 
@@ -23,7 +23,8 @@ yay -S dcli-arch-git
 git clone git@github.com:soundfox99/dcli_config.git ~/.config/arch-config
 cd ~/.config/arch-config
 
-# 5. Unlock encrypted files (bookmarks etc.) — needs the key from your backup
+# 5. Unlock encrypted files — only needed if this repo has any. It currently
+#    has none (see "Encrypted files" below), so this step is usually a no-op.
 git-crypt unlock /path/to/arch-dcli-config.key
 
 # 6. Build the two Noctalia packages the AUR no longer carries
@@ -59,7 +60,6 @@ modules/
   desktop-environments/niri/pkgbuilds/        Vendored build recipes for two
                                               packages deleted from the AUR
   scripts/                    Cross-module hook scripts (multilib, fstrim, ...)
-modules/browsers/data/*-bookmarks.html            git-crypt encrypted
 scripts/setup-repo-encryption.sh   One-time git-crypt init
 state/                        Runtime state, auto-managed by dcli
 ```
@@ -93,9 +93,8 @@ Getting this wrong is silent: the hook succeeds, but writes into `/root`.
 
 | Hook | Runs as | What it does |
 | --- | --- | --- |
-| `browsers/scripts/install-browser-policies.sh` | root | Extension auto-install policies under `/etc`. No args = all three browsers; pass names for a subset |
-| `browsers/brave/scripts/install-brave-policy.sh` | root | Brave only — wrapper that calls the above with `brave` |
 | `browsers/zen/scripts/install-zen-shortcuts.sh` | user | Keyboard shortcuts into every Zen profile |
+| `modules/scripts/chromium-nvidia-vaapi.sh` (hardware) | root | Chromium VA-API desktop-entry override on NVIDIA hosts; removes a stale override elsewhere |
 | `editors/vscodium/scripts/install-vscodium-extensions.sh` | user | Extensions from `data/extensions.txt` |
 | `onboarding/scripts/onboarding.sh` | user | First-run prompts; silent when already done |
 | `programming-languages/nodejs/scripts/fnm-bootstrap.sh` | user | fnm + Node versions |
@@ -132,7 +131,9 @@ those chords before any application sees them.
 
 ## Encrypted files (git-crypt)
 
-`modules/browsers/data/*-bookmarks.html**` is encrypted via the `.gitattributes` filter. The symmetric key file (`~/arch-dcli-config.key`) is the only way to decrypt on another machine — **back it up to a password manager AND a USB**. Without it the bookmarks in the repo are unrecoverable.
+**Nothing in this repo is currently encrypted.** Browser bookmarks and extension lists were the only git-crypt-filtered files, and both were removed when bookmark/extension sync came out — they are managed by hand now.
+
+The machinery is intact and `.gitattributes` is the place to re-arm it: add a pattern there and the `safe-commit-push.sh` guard starts enforcing it again. That guard is a no-op while no file matches, so pushes are unaffected. The symmetric key (`~/arch-dcli-config.key`) is still the only way to decrypt on another machine if you do re-arm — **back it up to a password manager AND a USB**.
 
 ### Setting up encryption on a brand-new repo
 
@@ -149,7 +150,7 @@ git remote add origin git@github.com:soundfox99/dcli_config.git
 git push -u origin main
 
 # Sanity check after commit:
-git show HEAD:modules/browsers/data/*-bookmarks.htmlfirefox.html | head -c 9 | xxd
+git show HEAD:<an encrypted path> | head -c 9 | xxd   # expect the git-crypt magic
 # Expected output starts with: 0047 4954 4352 5950 54  (GITCRYPT magic)
 ```
 
